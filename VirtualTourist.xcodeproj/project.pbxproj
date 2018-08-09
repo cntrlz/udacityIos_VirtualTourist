@@ -8,13 +8,25 @@
 
 /* Begin PBXBuildFile section */
 		5E6CB1D4210FD33100591165 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6CB1D3210FD33100591165 /* AppDelegate.swift */; };
-		5E6CB1D6210FD33100591165 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6CB1D5210FD33100591165 /* ViewController.swift */; };
 		5E6CB1D9210FD33100591165 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 5E6CB1D7210FD33100591165 /* Main.storyboard */; };
 		5E6CB1DC210FD33100591165 /* VirtualTourist.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 5E6CB1DA210FD33100591165 /* VirtualTourist.xcdatamodeld */; };
 		5E6CB1DE210FD33400591165 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5E6CB1DD210FD33400591165 /* Assets.xcassets */; };
 		5E6CB1E1210FD33400591165 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 5E6CB1DF210FD33400591165 /* LaunchScreen.storyboard */; };
 		5E6CB1EC210FD33400591165 /* VirtualTouristTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6CB1EB210FD33400591165 /* VirtualTouristTests.swift */; };
 		5E6CB1F7210FD33400591165 /* VirtualTouristUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6CB1F6210FD33400591165 /* VirtualTouristUITests.swift */; };
+		5E6CB209210FD62D00591165 /* TravelLocationsMapViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6CB208210FD62D00591165 /* TravelLocationsMapViewController.swift */; };
+		5E6CB20D2110C05200591165 /* FlickrAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6CB20C2110C05200591165 /* FlickrAPIClient.swift */; };
+		5E6CB2182111144300591165 /* SwiftyJSON.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5E6CB2152111144300591165 /* SwiftyJSON.framework */; };
+		5E6CB2192111144300591165 /* Alamofire.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5E6CB2162111144300591165 /* Alamofire.framework */; };
+		5E6CB21B2111180000591165 /* ObjectMapper.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5E6CB2142111144300591165 /* ObjectMapper.framework */; };
+		5E6CB21D2111188000591165 /* AlamofireObjectMapper.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5E6CB21C2111188000591165 /* AlamofireObjectMapper.framework */; };
+		5E6CB21F2111363000591165 /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6CB21E2111363000591165 /* File.swift */; };
+		5E6CB221211139A300591165 /* DataController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6CB220211139A300591165 /* DataController.swift */; };
+		5E6CB22321113CC100591165 /* MappedMinimalPhoto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6CB22221113CC100591165 /* MappedMinimalPhoto.swift */; };
+		5E6CB22521113CE800591165 /* MappedPhoto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6CB22421113CE800591165 /* MappedPhoto.swift */; };
+		5E6CB22721113D2200591165 /* MappedPhotos.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6CB22621113D2200591165 /* MappedPhotos.swift */; };
+		5E6CB22A2113ADB400591165 /* PhotoAlbumViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6CB2292113ADB400591165 /* PhotoAlbumViewController.swift */; };
+		5EFA4A1A2113C88C00785A4D /* PhotoAlbumCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EFA4A192113C88C00785A4D /* PhotoAlbumCell.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -37,7 +49,6 @@
 /* Begin PBXFileReference section */
 		5E6CB1D0210FD33100591165 /* VirtualTourist.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VirtualTourist.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E6CB1D3210FD33100591165 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		5E6CB1D5210FD33100591165 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		5E6CB1D8210FD33100591165 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		5E6CB1DB210FD33100591165 /* VirtualTourist.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = VirtualTourist.xcdatamodel; sourceTree = "<group>"; };
 		5E6CB1DD210FD33400591165 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -49,6 +60,19 @@
 		5E6CB1F2210FD33400591165 /* VirtualTouristUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VirtualTouristUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E6CB1F6210FD33400591165 /* VirtualTouristUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtualTouristUITests.swift; sourceTree = "<group>"; };
 		5E6CB1F8210FD33400591165 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		5E6CB208210FD62D00591165 /* TravelLocationsMapViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelLocationsMapViewController.swift; sourceTree = "<group>"; };
+		5E6CB20C2110C05200591165 /* FlickrAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlickrAPIClient.swift; sourceTree = "<group>"; };
+		5E6CB2142111144300591165 /* ObjectMapper.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ObjectMapper.framework; path = Carthage/Build/iOS/ObjectMapper.framework; sourceTree = "<group>"; };
+		5E6CB2152111144300591165 /* SwiftyJSON.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftyJSON.framework; path = Carthage/Build/iOS/SwiftyJSON.framework; sourceTree = "<group>"; };
+		5E6CB2162111144300591165 /* Alamofire.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Alamofire.framework; path = Carthage/Build/iOS/Alamofire.framework; sourceTree = "<group>"; };
+		5E6CB21C2111188000591165 /* AlamofireObjectMapper.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AlamofireObjectMapper.framework; path = Carthage/Build/iOS/AlamofireObjectMapper.framework; sourceTree = "<group>"; };
+		5E6CB21E2111363000591165 /* File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
+		5E6CB220211139A300591165 /* DataController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataController.swift; sourceTree = "<group>"; };
+		5E6CB22221113CC100591165 /* MappedMinimalPhoto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MappedMinimalPhoto.swift; sourceTree = "<group>"; };
+		5E6CB22421113CE800591165 /* MappedPhoto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MappedPhoto.swift; sourceTree = "<group>"; };
+		5E6CB22621113D2200591165 /* MappedPhotos.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MappedPhotos.swift; sourceTree = "<group>"; };
+		5E6CB2292113ADB400591165 /* PhotoAlbumViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoAlbumViewController.swift; sourceTree = "<group>"; };
+		5EFA4A192113C88C00785A4D /* PhotoAlbumCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoAlbumCell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,6 +80,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5E6CB2192111144300591165 /* Alamofire.framework in Frameworks */,
+				5E6CB21B2111180000591165 /* ObjectMapper.framework in Frameworks */,
+				5E6CB2182111144300591165 /* SwiftyJSON.framework in Frameworks */,
+				5E6CB21D2111188000591165 /* AlamofireObjectMapper.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -79,10 +107,12 @@
 		5E6CB1C7210FD33100591165 = {
 			isa = PBXGroup;
 			children = (
+				5E6CB21E2111363000591165 /* File.swift */,
 				5E6CB1D2210FD33100591165 /* VirtualTourist */,
 				5E6CB1EA210FD33400591165 /* VirtualTouristTests */,
 				5E6CB1F5210FD33400591165 /* VirtualTouristUITests */,
 				5E6CB1D1210FD33100591165 /* Products */,
+				5E6CB2132111144200591165 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -100,12 +130,11 @@
 			isa = PBXGroup;
 			children = (
 				5E6CB1D3210FD33100591165 /* AppDelegate.swift */,
-				5E6CB1D5210FD33100591165 /* ViewController.swift */,
-				5E6CB1D7210FD33100591165 /* Main.storyboard */,
-				5E6CB1DD210FD33400591165 /* Assets.xcassets */,
-				5E6CB1DF210FD33400591165 /* LaunchScreen.storyboard */,
+				5E6CB204210FD36E00591165 /* Model */,
+				5E6CB205210FD37800591165 /* View */,
+				5E6CB206210FD37E00591165 /* Controller */,
+				5E6CB207210FD3A200591165 /* Assets */,
 				5E6CB1E2210FD33400591165 /* Info.plist */,
-				5E6CB1DA210FD33100591165 /* VirtualTourist.xcdatamodeld */,
 			);
 			path = VirtualTourist;
 			sourceTree = "<group>";
@@ -128,6 +157,73 @@
 			path = VirtualTouristUITests;
 			sourceTree = "<group>";
 		};
+		5E6CB204210FD36E00591165 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				5E6CB1DA210FD33100591165 /* VirtualTourist.xcdatamodeld */,
+				5E6CB220211139A300591165 /* DataController.swift */,
+				5E6CB20B211008FF00591165 /* Client */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		5E6CB205210FD37800591165 /* View */ = {
+			isa = PBXGroup;
+			children = (
+				5E6CB1D7210FD33100591165 /* Main.storyboard */,
+				5E6CB1DF210FD33400591165 /* LaunchScreen.storyboard */,
+				5EFA4A192113C88C00785A4D /* PhotoAlbumCell.swift */,
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
+		5E6CB206210FD37E00591165 /* Controller */ = {
+			isa = PBXGroup;
+			children = (
+				5E6CB208210FD62D00591165 /* TravelLocationsMapViewController.swift */,
+				5E6CB2292113ADB400591165 /* PhotoAlbumViewController.swift */,
+			);
+			path = Controller;
+			sourceTree = "<group>";
+		};
+		5E6CB207210FD3A200591165 /* Assets */ = {
+			isa = PBXGroup;
+			children = (
+				5E6CB1DD210FD33400591165 /* Assets.xcassets */,
+			);
+			path = Assets;
+			sourceTree = "<group>";
+		};
+		5E6CB20B211008FF00591165 /* Client */ = {
+			isa = PBXGroup;
+			children = (
+				5E6CB22821113D2D00591165 /* ObjectMapping */,
+				5E6CB20C2110C05200591165 /* FlickrAPIClient.swift */,
+			);
+			path = Client;
+			sourceTree = "<group>";
+		};
+		5E6CB2132111144200591165 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				5E6CB21C2111188000591165 /* AlamofireObjectMapper.framework */,
+				5E6CB2162111144300591165 /* Alamofire.framework */,
+				5E6CB2142111144300591165 /* ObjectMapper.framework */,
+				5E6CB2152111144300591165 /* SwiftyJSON.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		5E6CB22821113D2D00591165 /* ObjectMapping */ = {
+			isa = PBXGroup;
+			children = (
+				5E6CB22621113D2200591165 /* MappedPhotos.swift */,
+				5E6CB22221113CC100591165 /* MappedMinimalPhoto.swift */,
+				5E6CB22421113CE800591165 /* MappedPhoto.swift */,
+			);
+			path = ObjectMapping;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -138,6 +234,7 @@
 				5E6CB1CC210FD33100591165 /* Sources */,
 				5E6CB1CD210FD33100591165 /* Frameworks */,
 				5E6CB1CE210FD33100591165 /* Resources */,
+				5E6CB21A2111145F00591165 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -254,14 +351,42 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		5E6CB21A2111145F00591165 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Carthage/Build/iOS/Alamofire.framework",
+				"$(SRCROOT)/Carthage/Build/iOS/SwiftyJSON.framework",
+				"$(SRCROOT)/Carthage/Build/iOS/ObjectMapper.framework",
+				"$(SRCROOT)/Carthage/Build/iOS/AlamofireObjectMapper.framework",
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/usr/local/bin/carthage copy-frameworks";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		5E6CB1CC210FD33100591165 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5E6CB1D6210FD33100591165 /* ViewController.swift in Sources */,
+				5E6CB22A2113ADB400591165 /* PhotoAlbumViewController.swift in Sources */,
+				5E6CB221211139A300591165 /* DataController.swift in Sources */,
+				5E6CB20D2110C05200591165 /* FlickrAPIClient.swift in Sources */,
+				5E6CB21F2111363000591165 /* File.swift in Sources */,
 				5E6CB1D4210FD33100591165 /* AppDelegate.swift in Sources */,
 				5E6CB1DC210FD33100591165 /* VirtualTourist.xcdatamodeld in Sources */,
+				5E6CB209210FD62D00591165 /* TravelLocationsMapViewController.swift in Sources */,
+				5E6CB22321113CC100591165 /* MappedMinimalPhoto.swift in Sources */,
+				5E6CB22521113CE800591165 /* MappedPhoto.swift in Sources */,
+				5E6CB22721113D2200591165 /* MappedPhotos.swift in Sources */,
+				5EFA4A1A2113C88C00785A4D /* PhotoAlbumCell.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -435,6 +560,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/iOS",
+				);
 				INFOPLIST_FILE = VirtualTourist/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -452,6 +581,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/iOS",
+				);
 				INFOPLIST_FILE = VirtualTourist/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
