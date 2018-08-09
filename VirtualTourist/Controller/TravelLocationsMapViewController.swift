@@ -13,7 +13,11 @@ import Alamofire
 
 class TravelLocationsMapViewController: UIViewController {
 	@IBOutlet weak var mapView: MKMapView!
+	@IBOutlet weak var editButton: UIBarButtonItem!
+	
 	var pins: [Pin] = []
+	var editingMap: Bool = false
+	var trashButton: UIBarButtonItem = UIBarButtonItem()
 	
 	var flickrClient:FlickrAPIClient!
 	var dataController:DataController!
@@ -25,6 +29,8 @@ class TravelLocationsMapViewController: UIViewController {
 		setUpMap()
 		getPins()
 		setupFetchedResultsController()
+		
+		self.trashButton = UIBarButtonItem(barButtonSystemItem: .trash, target: self, action: #selector(trashPins))
 	}
 	
 	override func viewWillAppear(_ animated: Bool) {
@@ -135,6 +141,38 @@ class TravelLocationsMapViewController: UIViewController {
 		}
 	}
 	
+	@IBAction func editButtonTapped(_ sender: Any) {
+		if (self.editingMap) {
+			self.editingMap = false
+			editButton.title = "Edit"
+			self.navigationItem.leftBarButtonItem = nil
+		} else {
+			self.editingMap = true
+			editButton.title = "Done"
+			self.navigationItem.leftBarButtonItem = self.trashButton
+		}
+	}
+	
+	// TODO: If no pins to delete, disable button
+	@objc func trashPins() {
+		let alert = UIAlertController(title: "Delete Pins?", message: "Are you sure you want to delete all your pins, and their associated albums?", preferredStyle: UIAlertControllerStyle.alert)
+		alert.addAction(UIAlertAction(title: "Cancel", style: UIAlertActionStyle.default, handler: nil))
+		alert.addAction(UIAlertAction(title: "Delete Pins", style: UIAlertActionStyle.destructive) { action in
+//			self.mapView.removeAnnotations(self.mapView.annotations)
+//			fetchedResultsController.fetchedObjects?.forEach(self.dataController.viewContext.delete($0))
+			
+			// You know, we don't have to wait for the fetched result controller's delegate methods to fire
+			self.pins = []
+			self.mapView.removeAnnotations(self.mapView.annotations)
+			
+			for pin in self.fetchedResultsController.fetchedObjects ?? [] {
+				self.dataController.viewContext.delete(pin)
+			}
+			try? self.dataController.viewContext.save()
+		})
+		self.present(alert, animated: true, completion: nil)
+	}
+	
 	func annotationSelected(annotation: MKAnnotation!) {
 		let pin = self.pins.filter{$0.longitude == annotation.coordinate.longitude && $0.latitude == annotation.coordinate.latitude}.first
 		if pin != nil {
@@ -190,7 +228,9 @@ extension TravelLocationsMapViewController: NSFetchedResultsControllerDelegate {
 			break
 		case .delete:
 			let pin = anObject as! Pin
-			self.pins.remove(at: indexPath!.row)
+			if let index = self.pins.index(of: pin) {
+				self.pins.remove(at: index)
+			}
 			self.removeAnnotationForPin(pin)
 			break
 		case .update:
