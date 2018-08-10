@@ -18,13 +18,20 @@ class PhotoAlbumViewController: UICollectionViewController {
 	var dataController: DataController!
 	var fetchedResultsController:NSFetchedResultsController<Photo>!
 	var queued: [Photo] = []
-	
+	var newCollectionButton: UIBarButtonItem = UIBarButtonItem()
 	
 	// MARK: View
 	override func viewDidLoad() {
 		setupFetchedResultsController()
 		configureCollectionView()
 		configureToolbarItems()
+	}
+	
+	override func viewWillAppear(_ animated: Bool) {
+		super.viewWillAppear(animated)
+		if (fetchedResultsController.sections?[0].numberOfObjects ?? 0 > 0) {
+			self.newCollectionButton.isEnabled = true
+		}
 	}
 	
 	override func viewDidDisappear(_ animated: Bool) {
@@ -39,6 +46,8 @@ class PhotoAlbumViewController: UICollectionViewController {
 	
 	func makeToolbarItems() -> [UIBarButtonItem] {
 		let newCollection = UIBarButtonItem(title: "New Collection", style: .plain, target: self, action: #selector(refreshPhotos(sender:)))
+		newCollection.isEnabled = false
+		self.newCollectionButton = newCollection
 		let space = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
 		return [space, newCollection, space]
 	}
@@ -68,7 +77,7 @@ class PhotoAlbumViewController: UICollectionViewController {
 		let fetchRequest:NSFetchRequest<Photo> = Photo.fetchRequest()
 		let predicate = NSPredicate(format: "pin == %@", pin)
 		fetchRequest.predicate = predicate
-		let sortDescriptor = NSSortDescriptor(key: "url", ascending: false)
+		let sortDescriptor = NSSortDescriptor(key: "date", ascending: false)
 		fetchRequest.sortDescriptors = [sortDescriptor]
 		
 		fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: "\(pin)-photos")
@@ -100,9 +109,11 @@ class PhotoAlbumViewController: UICollectionViewController {
 						let photo = Photo(context: self.dataController.viewContext)
 						photo.pin = pin
 						photo.url = imageURL.absoluteString
+						photo.date = Date()
 						try? self.dataController.viewContext.save()
 					}
 				}
+				self.newCollectionButton.isEnabled = true
 			} else {
 				print("PhotoAlbumView - Could not download photos for pin or no photos")
 				self.displayNoPhotos()
@@ -146,7 +157,13 @@ class PhotoAlbumViewController: UICollectionViewController {
 	}
 	
 	@objc func refreshPhotos(sender: Any) {
-		print("Refresh Photos")
+		self.newCollectionButton.isEnabled = false
+		
+		for photo in self.fetchedResultsController.fetchedObjects ?? [] {
+			deletePhoto(at: fetchedResultsController.indexPath(forObject: photo)!)
+		}
+		
+		downloadPhotosForPin(self.pin)
 	}
 }
 
@@ -194,6 +211,7 @@ extension PhotoAlbumViewController: NSFetchedResultsControllerDelegate {
 			self.collectionView?.insertItems(at: [newIndexPath!])
 			break
 		case .delete:
+			print("deleting item at index path \(indexPath!.row)")
 			self.collectionView?.deleteItems(at: [indexPath!])
 			break
 		case .update:

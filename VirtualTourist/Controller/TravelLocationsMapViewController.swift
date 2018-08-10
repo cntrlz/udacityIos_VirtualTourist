@@ -158,10 +158,8 @@ class TravelLocationsMapViewController: UIViewController {
 		let alert = UIAlertController(title: "Delete Pins?", message: "Are you sure you want to delete all your pins, and their associated albums?", preferredStyle: UIAlertControllerStyle.alert)
 		alert.addAction(UIAlertAction(title: "Cancel", style: UIAlertActionStyle.default, handler: nil))
 		alert.addAction(UIAlertAction(title: "Delete Pins", style: UIAlertActionStyle.destructive) { action in
-//			self.mapView.removeAnnotations(self.mapView.annotations)
-//			fetchedResultsController.fetchedObjects?.forEach(self.dataController.viewContext.delete($0))
-			
-			// You know, we don't have to wait for the fetched result controller's delegate methods to fire
+			// We don't have to wait for the fetched result controller's delegate methods to fire
+			// It's slightly faster to clear these first, and just let the methods fire off
 			self.pins = []
 			self.mapView.removeAnnotations(self.mapView.annotations)
 			
@@ -176,7 +174,17 @@ class TravelLocationsMapViewController: UIViewController {
 	func annotationSelected(annotation: MKAnnotation!) {
 		let pin = self.pins.filter{$0.longitude == annotation.coordinate.longitude && $0.latitude == annotation.coordinate.latitude}.first
 		if pin != nil {
-			showAlbumForPin(pin)
+			if self.editingMap {
+				self.mapView.deselectAnnotation(annotation, animated: true)
+				self.dataController.viewContext.delete(pin!)
+				if let index = self.pins.index(of: pin!) {
+					self.pins.remove(at: index)
+				}
+				self.removeAnnotationForPin(pin!)
+			} else {
+				showAlbumForPin(pin)
+				self.mapView.deselectAnnotation(annotation, animated: true)
+			}
 		}
 	}
 	
@@ -211,10 +219,6 @@ extension TravelLocationsMapViewController: MKMapViewDelegate {
 			self.annotationSelected(annotation: annotation)
 		}
 	}
-	
-	func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
-		print("did deselect \(view)")
-	}
 }
 
 // MARK: - MapView Delegate Extension
@@ -230,6 +234,8 @@ extension TravelLocationsMapViewController: NSFetchedResultsControllerDelegate {
 			let pin = anObject as! Pin
 			if let index = self.pins.index(of: pin) {
 				self.pins.remove(at: index)
+			} else {
+				print("Attempted to delete a pin which was not in our array")
 			}
 			self.removeAnnotationForPin(pin)
 			break
