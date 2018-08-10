@@ -31,6 +31,7 @@ class TravelLocationsMapViewController: UIViewController {
 		setupFetchedResultsController()
 		
 		self.trashButton = UIBarButtonItem(barButtonSystemItem: .trash, target: self, action: #selector(trashPins))
+		self.trashButton.isEnabled = false
 	}
 	
 	override func viewWillAppear(_ animated: Bool) {
@@ -125,6 +126,9 @@ class TravelLocationsMapViewController: UIViewController {
 		for annotation in mapView.annotations {
 			if annotation.coordinate.latitude == pin.latitude && annotation.coordinate.longitude == pin.longitude {
 				mapView.removeAnnotation(annotation)
+				if (mapView.annotations.count == 0) {
+					self.trashButton.isEnabled = false
+				}
 			}
 		}
 	}
@@ -148,6 +152,9 @@ class TravelLocationsMapViewController: UIViewController {
 			self.navigationItem.leftBarButtonItem = nil
 		} else {
 			self.editingMap = true
+			if (mapView.annotations.count > 0) {
+				self.trashButton.isEnabled = true
+			}
 			editButton.title = "Done"
 			self.navigationItem.leftBarButtonItem = self.trashButton
 		}
@@ -162,6 +169,7 @@ class TravelLocationsMapViewController: UIViewController {
 			// It's slightly faster to clear these first, and just let the methods fire off
 			self.pins = []
 			self.mapView.removeAnnotations(self.mapView.annotations)
+			self.trashButton.isEnabled = false
 			
 			for pin in self.fetchedResultsController.fetchedObjects ?? [] {
 				self.dataController.viewContext.delete(pin)
