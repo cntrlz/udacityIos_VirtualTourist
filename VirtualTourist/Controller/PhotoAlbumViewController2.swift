@@ -1,8 +1,8 @@
 //
-//  PhotoAlbumViewController.swift
+//  PhotoAlbumViewController2.swift
 //  VirtualTourist
 //
-//  Created by benchmark on 8/2/18.
+//  Created by benchmark on 8/10/18.
 //  Copyright © 2018 Viktor Lantos. All rights reserved.
 //
 
@@ -10,8 +10,13 @@ import Foundation
 import UIKit
 import CoreData
 import Alamofire
+import MapKit
 
-class PhotoAlbumViewController: UICollectionViewController {
+class PhotoAlbumViewController2: UIViewController {
+	// IBOutlets
+	@IBOutlet weak var collectionView: UICollectionView!
+	@IBOutlet weak var mapView: MKMapView!
+	
 	// UI Elements
 	var newCollectionButton: UIBarButtonItem = UIBarButtonItem()
 	var activityIndicator: UIActivityIndicatorView = UIActivityIndicatorView()
@@ -24,13 +29,14 @@ class PhotoAlbumViewController: UICollectionViewController {
 	// Local properties
 	var pin: Pin!
 	var queued: [Photo] = []
+	var mapRegion: MKCoordinateRegion = MKCoordinateRegion()
 
 	// MARK: - View
 	override func viewDidLoad() {
 		setupFetchedResultsController()
+		configureView()
+		configureMapView()
 		configureCollectionView()
-		configureToolbarItems()
-		configureActivityIndicator()
 	}
 	
 	override func viewWillAppear(_ animated: Bool) {
@@ -48,6 +54,14 @@ class PhotoAlbumViewController: UICollectionViewController {
 		fetchedResultsController = nil
 	}
 	
+	func configureView() {
+		configureToolbarItems()
+		configureActivityIndicator()
+		
+		let deleteButton = UIBarButtonItem(barButtonSystemItem: .trash, target: self, action: #selector(deleteAlbum))
+		navigationItem.rightBarButtonItem = deleteButton
+	}
+
 	func configureToolbarItems() {
 		toolbarItems = makeToolbarItems()
 		navigationController?.setToolbarHidden(false, animated: false)
@@ -92,6 +106,17 @@ class PhotoAlbumViewController: UICollectionViewController {
 		collectionView?.setCollectionViewLayout(flow, animated: false)
 	}
 	
+	func configureMapView() {
+		let adjustedRegion = mapView.regionThatFits(mapRegion)
+		mapView.setRegion(adjustedRegion, animated: false)
+		
+		let annotation = MKPointAnnotation()
+		annotation.coordinate = CLLocationCoordinate2D(latitude: pin.latitude, longitude: pin.longitude)
+		mapView.addAnnotation(annotation)
+		
+		mapView.setCenter(annotation.coordinate, animated: false)
+	}
+	
 	func displayNoPhotos() {
 		let alert = UIAlertController(title: "No Photos", message: "Sorry! We couldn't find any pictures for this location", preferredStyle: UIAlertControllerStyle.alert)
 		alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: { alertAction in self.activityIndicator.stopAnimating()
@@ -123,6 +148,20 @@ class PhotoAlbumViewController: UICollectionViewController {
 		} catch {
 			fatalError("PhotoAlbumView - The fetch could not be performed: \(error.localizedDescription)")
 		}
+	}
+	
+	@objc fileprivate func deleteAlbum() {
+		let alert = UIAlertController(title: "Delete Album?", message: "Are you sure you want to delete all your photos, and its associated pin?", preferredStyle: UIAlertControllerStyle.alert)
+		alert.addAction(UIAlertAction(title: "Cancel", style: UIAlertActionStyle.default, handler: nil))
+		alert.addAction(UIAlertAction(title: "Delete Album", style: UIAlertActionStyle.destructive) { action in
+			if let vc = self.navigationController?.viewControllers.first as? TravelLocationsMapViewController {
+				vc.deletePin(self.pin)
+				self.pin = nil
+			}
+			
+			self.navigationController?.popViewController(animated: true)
+		})
+		self.present(alert, animated: true, completion: nil)
 	}
 	
 	// MARK: - Photos
@@ -202,8 +241,8 @@ class PhotoAlbumViewController: UICollectionViewController {
 	}
 }
 
-extension PhotoAlbumViewController: UICollectionViewDelegateFlowLayout {
-	override func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
+extension PhotoAlbumViewController2: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+	func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
 		let cell = cell as! PhotoAlbumCell
 		if let data = fetchedResultsController.object(at: indexPath).imageData {
 			// TODO: Check to see if we really need this
@@ -216,39 +255,42 @@ extension PhotoAlbumViewController: UICollectionViewDelegateFlowLayout {
 			downloadDataForPhoto(fetchedResultsController.object(at: indexPath))
 		}
 	}
-	override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "PhotoAlbumCell", for: indexPath) as! PhotoAlbumCell
 		cell.prepareForReuse()
 		cell.indexPath = indexPath
 		return cell
 	}
 	
-	override func numberOfSections(in collectionView: UICollectionView) -> Int {
+	func numberOfSections(in collectionView: UICollectionView) -> Int {
 		return 1 // We should always have just one section
 	}
 	
-	override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+	func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
 		return fetchedResultsController.sections?[section].numberOfObjects ?? 0
 	}
 	
-	override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
 		deletePhoto(at: indexPath)
 	}
 }
 
-extension PhotoAlbumViewController: NSFetchedResultsControllerDelegate {
+extension PhotoAlbumViewController2: NSFetchedResultsControllerDelegate {
 	func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
-		switch type {
-		case .insert:
-			self.collectionView?.insertItems(at: [newIndexPath!])
-			break
-		case .delete:
-			self.collectionView?.deleteItems(at: [indexPath!])
-			break
-		case .update:
-			self.collectionView?.reloadItems(at: [indexPath!])
-		case .move:
-			self.collectionView?.moveItem(at: indexPath!, to: newIndexPath!)
+		// If we have deleted our pin, we don't want any of these to trigger
+		if anObject is Photo && self.pin != nil {
+			switch type {
+			case .insert:
+				self.collectionView?.insertItems(at: [newIndexPath!])
+				break
+			case .delete:
+				self.collectionView?.deleteItems(at: [indexPath!])
+				break
+			case .update:
+				self.collectionView?.reloadItems(at: [indexPath!])
+			case .move:
+				self.collectionView?.moveItem(at: indexPath!, to: newIndexPath!)
+			}
 		}
 	}
 }

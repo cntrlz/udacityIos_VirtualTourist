@@ -50,16 +50,17 @@ class TravelLocationsMapViewController: UIViewController {
 	// MARK: - Navigation
 	fileprivate func showAlbumForPin(_ pin: Pin?) {
 		if let pin = pin {
-			self.performSegue(withIdentifier: "showAlbumView", sender: pin)
+			self.performSegue(withIdentifier: "showAlbumView2", sender: pin)
 		} else {
 			print("TravelLocationsMapViewController - Error - No pin provided to \(#function). This shouldn't happen.")
 		}
 	}
 	
 	override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-		if let vc = segue.destination as? PhotoAlbumViewController {
+		if let vc = segue.destination as? PhotoAlbumViewController2 {
 			vc.dataController = dataController
 			vc.flickrClient = flickrClient
+			vc.mapRegion = mapView.region
 			if let pin = sender as? Pin {
 				vc.pin = pin
 			} else {
@@ -211,16 +212,20 @@ class TravelLocationsMapViewController: UIViewController {
 		self.present(alert, animated: true, completion: nil)
 	}
 	
+	func deletePin(_ pin: Pin?) {
+		self.dataController.viewContext.delete(pin!)
+		if let index = self.pins.index(of: pin!) {
+			self.pins.remove(at: index)
+		}
+		self.removeAnnotationForPin(pin!)
+	}
+	
 	func annotationSelected(annotation: MKAnnotation!) {
 		let pin = self.pins.filter{$0.longitude == annotation.coordinate.longitude && $0.latitude == annotation.coordinate.latitude}.first
 		if pin != nil {
 			if self.editingMap {
 				self.mapView.deselectAnnotation(annotation, animated: true)
-				self.dataController.viewContext.delete(pin!)
-				if let index = self.pins.index(of: pin!) {
-					self.pins.remove(at: index)
-				}
-				self.removeAnnotationForPin(pin!)
+				deletePin(pin)
 			} else {
 				showAlbumForPin(pin)
 				self.mapView.deselectAnnotation(annotation, animated: true)

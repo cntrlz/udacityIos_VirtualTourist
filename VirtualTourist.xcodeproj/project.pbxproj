@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5E488DCA211E42330021849E /* PhotoAlbumViewController2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E488DC9211E42330021849E /* PhotoAlbumViewController2.swift */; };
 		5E6CB1D4210FD33100591165 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6CB1D3210FD33100591165 /* AppDelegate.swift */; };
 		5E6CB1D9210FD33100591165 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 5E6CB1D7210FD33100591165 /* Main.storyboard */; };
 		5E6CB1DC210FD33100591165 /* VirtualTourist.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 5E6CB1DA210FD33100591165 /* VirtualTourist.xcdatamodeld */; };
@@ -47,6 +48,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		5E488DC9211E42330021849E /* PhotoAlbumViewController2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoAlbumViewController2.swift; sourceTree = "<group>"; };
 		5E6CB1D0210FD33100591165 /* VirtualTourist.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VirtualTourist.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E6CB1D3210FD33100591165 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		5E6CB1D8210FD33100591165 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -181,6 +183,7 @@
 			isa = PBXGroup;
 			children = (
 				5E6CB208210FD62D00591165 /* TravelLocationsMapViewController.swift */,
+				5E488DC9211E42330021849E /* PhotoAlbumViewController2.swift */,
 				5E6CB2292113ADB400591165 /* PhotoAlbumViewController.swift */,
 			);
 			path = Controller;
@@ -383,6 +386,7 @@
 				5E6CB1D4210FD33100591165 /* AppDelegate.swift in Sources */,
 				5E6CB1DC210FD33100591165 /* VirtualTourist.xcdatamodeld in Sources */,
 				5E6CB209210FD62D00591165 /* TravelLocationsMapViewController.swift in Sources */,
+				5E488DCA211E42330021849E /* PhotoAlbumViewController2.swift in Sources */,
 				5E6CB22321113CC100591165 /* MappedMinimalPhoto.swift in Sources */,
 				5E6CB22521113CE800591165 /* MappedPhoto.swift in Sources */,
 				5E6CB22721113D2200591165 /* MappedPhotos.swift in Sources */,
