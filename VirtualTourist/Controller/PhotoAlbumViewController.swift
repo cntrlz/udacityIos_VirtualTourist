@@ -20,7 +20,7 @@ class PhotoAlbumViewController: UICollectionViewController {
 	var queued: [Photo] = []
 	var newCollectionButton: UIBarButtonItem = UIBarButtonItem()
 	
-	// MARK: View
+	// MARK: - View
 	override func viewDidLoad() {
 		setupFetchedResultsController()
 		configureCollectionView()
@@ -31,6 +31,7 @@ class PhotoAlbumViewController: UICollectionViewController {
 		super.viewWillAppear(animated)
 		if (fetchedResultsController.sections?[0].numberOfObjects ?? 0 > 0) {
 			self.newCollectionButton.isEnabled = true
+			self.newCollectionButton.title = "New Collection"
 		}
 	}
 	
@@ -47,6 +48,7 @@ class PhotoAlbumViewController: UICollectionViewController {
 	func makeToolbarItems() -> [UIBarButtonItem] {
 		let newCollection = UIBarButtonItem(title: "New Collection", style: .plain, target: self, action: #selector(refreshPhotos(sender:)))
 		newCollection.isEnabled = false
+		self.newCollectionButton.title = "Fetching Photos..."
 		self.newCollectionButton = newCollection
 		let space = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
 		return [space, newCollection, space]
@@ -72,7 +74,7 @@ class PhotoAlbumViewController: UICollectionViewController {
 		collectionView?.setCollectionViewLayout(flow, animated: false)
 	}
 	
-	// MARK: Core Data
+	// MARK: - Core Data
 	fileprivate func setupFetchedResultsController() {
 		let fetchRequest:NSFetchRequest<Photo> = Photo.fetchRequest()
 		let predicate = NSPredicate(format: "pin == %@", pin)
@@ -100,7 +102,7 @@ class PhotoAlbumViewController: UICollectionViewController {
 		self.present(alert, animated: true, completion: nil)
 	}
 	
-	// MARK: API
+	// MARK: - API
 	func downloadPhotosForPin(_ pin: Pin){
 		flickrClient.getPhotosForLatitude(pin.latitude, longitude: pin.longitude){ photos in
 			if let photos = photos {
@@ -113,7 +115,13 @@ class PhotoAlbumViewController: UICollectionViewController {
 						try? self.dataController.viewContext.save()
 					}
 				}
-				self.newCollectionButton.isEnabled = true
+				
+				// Because fetching can be slow, user might press the new collection button
+				// twice, accidentally. Having it enable after a while prevents this
+				DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+					self.newCollectionButton.isEnabled = true
+					self.newCollectionButton.title = "New Collection"
+				}
 			} else {
 				print("PhotoAlbumView - Could not download photos for pin or no photos")
 				self.displayNoPhotos()
@@ -149,7 +157,7 @@ class PhotoAlbumViewController: UICollectionViewController {
 		}
 	}
 
-	// MARK: Photos
+	// MARK: - Photos
 	func deletePhoto(at indexPath: IndexPath) {
 		let photoToDelete = fetchedResultsController.object(at: indexPath)
 		dataController.viewContext.delete(photoToDelete)
@@ -158,6 +166,7 @@ class PhotoAlbumViewController: UICollectionViewController {
 	
 	@objc func refreshPhotos(sender: Any) {
 		self.newCollectionButton.isEnabled = false
+		self.newCollectionButton.title = "Fetching Photos..."
 		
 		for photo in self.fetchedResultsController.fetchedObjects ?? [] {
 			deletePhoto(at: fetchedResultsController.indexPath(forObject: photo)!)

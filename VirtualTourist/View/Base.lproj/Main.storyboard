@@ -51,7 +51,7 @@
                         <barButtonItem key="backBarButtonItem" title="OK" id="KlD-et-yAT"/>
                         <barButtonItem key="rightBarButtonItem" title="Edit" id="8n0-zV-rcq" userLabel="editButton">
                             <connections>
-                                <action selector="editButtonTapped:" destination="7To-Bq-qgo" id="XZx-vq-VLf"/>
+                                <action selector="edit:" destination="7To-Bq-qgo" id="jB9-XA-Efa"/>
                             </connections>
                         </barButtonItem>
                     </navigationItem>

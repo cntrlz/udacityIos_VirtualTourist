@@ -12,13 +12,16 @@ import CoreData
 import Alamofire
 
 class TravelLocationsMapViewController: UIViewController {
+	// IBOutlets
 	@IBOutlet weak var mapView: MKMapView!
 	@IBOutlet weak var editButton: UIBarButtonItem!
 	
+	// Local properties
 	var pins: [Pin] = []
 	var editingMap: Bool = false
 	var trashButton: UIBarButtonItem = UIBarButtonItem()
 	
+	// Model properties
 	var flickrClient:FlickrAPIClient!
 	var dataController:DataController!
 	var fetchedResultsController:NSFetchedResultsController<Pin>!
@@ -28,7 +31,7 @@ class TravelLocationsMapViewController: UIViewController {
 		super.viewDidLoad()
 		setUpMap()
 		getPins()
-		setupFetchedResultsController()
+		setUpFetchedResultsController()
 		
 		self.trashButton = UIBarButtonItem(barButtonSystemItem: .trash, target: self, action: #selector(trashPins))
 		self.trashButton.isEnabled = false
@@ -49,7 +52,7 @@ class TravelLocationsMapViewController: UIViewController {
 		if let pin = pin {
 			self.performSegue(withIdentifier: "showAlbumView", sender: pin)
 		} else {
-			print("Error - No pin in showAlbumForPin")
+			print("TravelLocationsMapViewController - Error - No pin provided to \(#function). This shouldn't happen.")
 		}
 	}
 	
@@ -60,25 +63,24 @@ class TravelLocationsMapViewController: UIViewController {
 			if let pin = sender as? Pin {
 				vc.pin = pin
 			} else {
-				print("Prepare for segue - sender is not pin: \(sender.debugDescription)")
+				print("TravelLocationsMapViewController - \(#function) - sender is not of Pin type. This shouldn't happen. Debug: \(sender.debugDescription)")
 			}
 		}
 	}
 	
-	// MARK: Core Data
-	fileprivate func setupFetchedResultsController() {
+	// MARK:  - Core Data
+	fileprivate func setUpFetchedResultsController() {
 		let fetchRequest:NSFetchRequest<Pin> = Pin.fetchRequest()
-		// TODO: Why latitude gee
 		let sortDescriptor = NSSortDescriptor(key: "latitude", ascending: false)
 		fetchRequest.sortDescriptors = [sortDescriptor]
 		
-		fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: "pins")
+		fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: nil) // cache name was "pins"
 		fetchedResultsController.delegate = self
 		
 		do {
 			try fetchedResultsController.performFetch()
 		} catch {
-			fatalError("The fetch could not be performed: \(error.localizedDescription)")
+			fatalError("TravelLocationsMapViewController - The fetch in \(#function) could not be performed: \(error.localizedDescription)")
 		}
 	}
 	
@@ -133,7 +135,33 @@ class TravelLocationsMapViewController: UIViewController {
 		}
 	}
 	
+	// MARK: - Pins
+	fileprivate func getPins() {
+		let pinRequest: NSFetchRequest<Pin> = Pin.fetchRequest()
+		do {
+			let result = try dataController.viewContext.fetch(pinRequest)
+			self.pins = result
+			for pin in self.pins {
+				addAnnotationForPin(pin)
+			}
+		} catch {
+			fatalError("TravelLocationsMapViewController - The initial fetch for pins in \(#function) could not be performed: \(error.localizedDescription)")
+		}
+	}
+	
+	fileprivate func addPinForAnnotation(_ annotation: MKAnnotation) {
+		let pin = Pin(context: dataController.viewContext)
+		pin.latitude = annotation.coordinate.latitude
+		pin.longitude = annotation.coordinate.longitude
+		try? dataController.viewContext.save()
+	}
+	
+	// MARK: - User Actions
 	@objc func mapLongPress(_ recognizer: UIGestureRecognizer) {
+		if self.editingMap {
+			// Don't make new pins if we're editing
+			return
+		}
 		if (recognizer.state == .began) {
 			let location = recognizer.location(in: self.mapView)
 			let coordinate : CLLocationCoordinate2D = mapView.convert(location, toCoordinateFrom: self.mapView)
@@ -145,28 +173,28 @@ class TravelLocationsMapViewController: UIViewController {
 		}
 	}
 	
-	@IBAction func editButtonTapped(_ sender: Any) {
+	@IBAction func edit(_ sender: Any) {
 		if (self.editingMap) {
 			self.editingMap = false
 			editButton.title = "Edit"
 			self.navigationItem.leftBarButtonItem = nil
 		} else {
 			self.editingMap = true
+			editButton.title = "Done"
+			
 			if (mapView.annotations.count > 0) {
 				self.trashButton.isEnabled = true
 			}
-			editButton.title = "Done"
 			self.navigationItem.leftBarButtonItem = self.trashButton
 		}
 	}
 	
-	// TODO: If no pins to delete, disable button
 	@objc func trashPins() {
 		let alert = UIAlertController(title: "Delete Pins?", message: "Are you sure you want to delete all your pins, and their associated albums?", preferredStyle: UIAlertControllerStyle.alert)
 		alert.addAction(UIAlertAction(title: "Cancel", style: UIAlertActionStyle.default, handler: nil))
 		alert.addAction(UIAlertAction(title: "Delete Pins", style: UIAlertActionStyle.destructive) { action in
 			// We don't have to wait for the fetched result controller's delegate methods to fire
-			// It's slightly faster to clear these first, and just let the methods fire off
+			// It's slightly faster to clear these first, and just let the methods fire off whenever they do
 			self.pins = []
 			self.mapView.removeAnnotations(self.mapView.annotations)
 			self.trashButton.isEnabled = false
@@ -195,32 +223,10 @@ class TravelLocationsMapViewController: UIViewController {
 			}
 		}
 	}
-	
-	// MARK: - Pins
-	fileprivate func getPins() {
-		let pinRequest: NSFetchRequest<Pin> = Pin.fetchRequest()
-		do {
-			let result = try dataController.viewContext.fetch(pinRequest)
-			self.pins = result
-			for pin in self.pins {
-				addAnnotationForPin(pin)
-			}
-		} catch {
-			fatalError("The fetch could not be performed: \(error.localizedDescription)")
-		}
-	}
-	
-	fileprivate func addPinForAnnotation(_ annotation: MKAnnotation) {
-		let pin = Pin(context: dataController.viewContext)
-		pin.latitude = annotation.coordinate.latitude
-		pin.longitude = annotation.coordinate.longitude
-		try? dataController.viewContext.save()
-	}
 }
 
 // MARK: - MapView Delegate Extension
 extension TravelLocationsMapViewController: MKMapViewDelegate {
-	// TODO: Allow tapping an already-selected annotation
 	// TODO: Fix pins disappearing on map move. See: https://stackoverflow.com/questions/49020023/mapkit-annotations-disappearing
 	func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
 		if let annotation = view.annotation {
@@ -243,7 +249,7 @@ extension TravelLocationsMapViewController: NSFetchedResultsControllerDelegate {
 			if let index = self.pins.index(of: pin) {
 				self.pins.remove(at: index)
 			} else {
-				print("Attempted to delete a pin which was not in our array")
+				print("TravelLocationsMapViewController - Attempted to delete a pin which was not in our array. This can be caused by  FetchedResultControllerDelegate methods firing multiple times.")
 			}
 			self.removeAnnotationForPin(pin)
 			break
