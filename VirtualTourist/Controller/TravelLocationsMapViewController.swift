@@ -74,7 +74,10 @@ class TravelLocationsMapViewController: UIViewController {
 		let sortDescriptor = NSSortDescriptor(key: "latitude", ascending: false)
 		fetchRequest.sortDescriptors = [sortDescriptor]
 		
-		fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: nil) // cache name was "pins"
+		// TODO: Figure out "couldn't read cache file to update store info timestamps" error.
+		// For now, made cachename nil
+		// Might be related to http://www.openradar.me/28361550
+		fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: nil)
 		fetchedResultsController.delegate = self
 		
 		do {

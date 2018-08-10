@@ -12,19 +12,28 @@ import CoreData
 import Alamofire
 
 class PhotoAlbumViewController: UICollectionViewController {
+	// IBOutlets
 	@IBOutlet weak var cv: UICollectionView!
+	
+	// UI Elements
+	var newCollectionButton: UIBarButtonItem = UIBarButtonItem()
+	var activityIndicator: UIActivityIndicatorView = UIActivityIndicatorView()
+	
+	// Model
 	var flickrClient:FlickrAPIClient!
-	var pin: Pin!
 	var dataController: DataController!
 	var fetchedResultsController:NSFetchedResultsController<Photo>!
-	var queued: [Photo] = []
-	var newCollectionButton: UIBarButtonItem = UIBarButtonItem()
 	
+	// Local properties
+	var pin: Pin!
+	var queued: [Photo] = []
+
 	// MARK: - View
 	override func viewDidLoad() {
 		setupFetchedResultsController()
 		configureCollectionView()
 		configureToolbarItems()
+		configureActivityIndicator()
 	}
 	
 	override func viewWillAppear(_ animated: Bool) {
@@ -32,6 +41,8 @@ class PhotoAlbumViewController: UICollectionViewController {
 		if (fetchedResultsController.sections?[0].numberOfObjects ?? 0 > 0) {
 			self.newCollectionButton.isEnabled = true
 			self.newCollectionButton.title = "New Collection"
+		} else {
+			self.activityIndicator.startAnimating()
 		}
 	}
 	
@@ -43,6 +54,15 @@ class PhotoAlbumViewController: UICollectionViewController {
 	func configureToolbarItems() {
 		toolbarItems = makeToolbarItems()
 		navigationController?.setToolbarHidden(false, animated: false)
+	}
+	
+	func configureActivityIndicator() {
+		let indicator = UIActivityIndicatorView(activityIndicatorStyle: UIActivityIndicatorViewStyle.whiteLarge)
+		indicator.color = UIColor.gray
+		indicator.center = view.center
+		indicator.hidesWhenStopped = true
+		self.activityIndicator = indicator
+		view.addSubview(indicator)
 	}
 	
 	func makeToolbarItems() -> [UIBarButtonItem] {
@@ -74,6 +94,12 @@ class PhotoAlbumViewController: UICollectionViewController {
 		collectionView?.setCollectionViewLayout(flow, animated: false)
 	}
 	
+	func displayNoPhotos() {
+		let alert = UIAlertController(title: "Alert", message: "No photos for this location", preferredStyle: UIAlertControllerStyle.alert)
+		alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: nil))
+		self.present(alert, animated: true, completion: nil)
+	}
+	
 	// MARK: - Core Data
 	fileprivate func setupFetchedResultsController() {
 		let fetchRequest:NSFetchRequest<Photo> = Photo.fetchRequest()
@@ -96,13 +122,25 @@ class PhotoAlbumViewController: UICollectionViewController {
 		}
 	}
 	
-	func displayNoPhotos() {
-		let alert = UIAlertController(title: "Alert", message: "No photos for this location", preferredStyle: UIAlertControllerStyle.alert)
-		alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: nil))
-		self.present(alert, animated: true, completion: nil)
+	// MARK: - Photos
+	func deletePhoto(at indexPath: IndexPath) {
+		let photoToDelete = fetchedResultsController.object(at: indexPath)
+		dataController.viewContext.delete(photoToDelete)
+		try? dataController.viewContext.save()
 	}
 	
-	// MARK: - API
+	@objc func refreshPhotos(sender: Any) {
+		self.newCollectionButton.isEnabled = false
+		self.newCollectionButton.title = "Fetching Photos..."
+		self.activityIndicator.startAnimating()
+		
+		for photo in self.fetchedResultsController.fetchedObjects ?? [] {
+			deletePhoto(at: fetchedResultsController.indexPath(forObject: photo)!)
+		}
+		
+		downloadPhotosForPin(self.pin)
+	}
+	
 	func downloadPhotosForPin(_ pin: Pin){
 		flickrClient.getPhotosForLatitude(pin.latitude, longitude: pin.longitude){ photos in
 			if let photos = photos {
@@ -122,6 +160,7 @@ class PhotoAlbumViewController: UICollectionViewController {
 					self.newCollectionButton.isEnabled = true
 					self.newCollectionButton.title = "New Collection"
 				}
+				self.activityIndicator.stopAnimating()
 			} else {
 				print("PhotoAlbumView - Could not download photos for pin or no photos")
 				self.displayNoPhotos()
@@ -129,6 +168,7 @@ class PhotoAlbumViewController: UICollectionViewController {
 		}
 	}
 	
+	// TODO: Move this to FlickrAPIClient
 	fileprivate func downloadDataForPhoto(_ photo: Photo) {
 		if queued.contains(photo) {
 			print("PhotoAlbumView - Photo queued for download already")
@@ -156,39 +196,19 @@ class PhotoAlbumViewController: UICollectionViewController {
 			print("PhotoAlbumView -  could not download data for photo with no url")
 		}
 	}
-
-	// MARK: - Photos
-	func deletePhoto(at indexPath: IndexPath) {
-		let photoToDelete = fetchedResultsController.object(at: indexPath)
-		dataController.viewContext.delete(photoToDelete)
-		try? dataController.viewContext.save()
-	}
-	
-	@objc func refreshPhotos(sender: Any) {
-		self.newCollectionButton.isEnabled = false
-		self.newCollectionButton.title = "Fetching Photos..."
-		
-		for photo in self.fetchedResultsController.fetchedObjects ?? [] {
-			deletePhoto(at: fetchedResultsController.indexPath(forObject: photo)!)
-		}
-		
-		downloadPhotosForPin(self.pin)
-	}
 }
 
 extension PhotoAlbumViewController: UICollectionViewDelegateFlowLayout {
-	// TODO: Have the list populated with placeholder cells. Start the download for a Photo only when this method is called
 	override func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
 		let cell = cell as! PhotoAlbumCell
 		if let data = fetchedResultsController.object(at: indexPath).imageData {
-//			print("CFRAIP - \(indexPath.row) - has data already")
+			// TODO: Check to see if we really need this
 			if cell.indexPath == indexPath {
 				cell.setImageData(data: data)
 			} else {
-//				print("CFRAIP - \(indexPath.row) - index paths do not match, not setting image")
+				//	print("CFRAIP - \(indexPath.row) - index paths do not match, not setting image")
 			}
 		} else {
-//			print("CFRAIP - \(indexPath.row) - has no data. getting data.")
 			downloadDataForPhoto(fetchedResultsController.object(at: indexPath))
 		}
 	}
@@ -196,7 +216,6 @@ extension PhotoAlbumViewController: UICollectionViewDelegateFlowLayout {
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "PhotoAlbumCell", for: indexPath) as! PhotoAlbumCell
 		cell.prepareForReuse()
 		cell.indexPath = indexPath
-		
 		return cell
 	}
 	
@@ -220,7 +239,6 @@ extension PhotoAlbumViewController: NSFetchedResultsControllerDelegate {
 			self.collectionView?.insertItems(at: [newIndexPath!])
 			break
 		case .delete:
-			print("deleting item at index path \(indexPath!.row)")
 			self.collectionView?.deleteItems(at: [indexPath!])
 			break
 		case .update:
