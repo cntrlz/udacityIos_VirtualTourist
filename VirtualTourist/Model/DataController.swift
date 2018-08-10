@@ -23,29 +23,29 @@ class DataController {
 	init(modelName:String){
 		persistentContainer = NSPersistentContainer(name: modelName)
 		// TODO: I don't think we need to use a background context
-//		backgroundContext = persistentContainer.newBackgroundContext()
-		//		Cool methods
-		//		On the container...
-		//		persistentContainer.performBackgroundTask { (context) in
-		//			doSomeWork()
-		//			try save
-		//		}
-		//		And on the context...
-		//		viewContext.perform {
-		//			someStuffAsynchronouslyOnCorrectQueueForContext()
-		//		}
-		//
-		//		viewContext.performAndWait {
-		//			someStuffSynchronouslyOnCorrectQueue()
-		//		}
+		backgroundContext = persistentContainer.newBackgroundContext()
+//				Cool methods
+//				On the container...
+//				persistentContainer.performBackgroundTask { (context) in
+//					doSomeWork()
+//					try save
+//				}
+//				And on the context...
+//				viewContext.perform {
+//					someStuffAsynchronouslyOnCorrectQueueForContext()
+//				}
+//
+//				viewContext.performAndWait {
+//					someStuffSynchronouslyOnCorrectQueue()
+//				}
 	}
 	
 	func configureContexts() {
 		// Both contexts will merge in chages from parent
 		viewContext.automaticallyMergesChangesFromParent = true
-//		backgroundContext.automaticallyMergesChangesFromParent = true
+		backgroundContext.automaticallyMergesChangesFromParent = true
 		// Background changes will override view context
-//		backgroundContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
+		backgroundContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
 		viewContext.mergePolicy = NSMergePolicy.mergeByPropertyStoreTrump
 	}
 	

@@ -74,7 +74,8 @@ class TravelLocationsMapViewController: UIViewController {
 		let sortDescriptor = NSSortDescriptor(key: "latitude", ascending: false)
 		fetchRequest.sortDescriptors = [sortDescriptor]
 		
-		// TODO: Figure out "couldn't read cache file to update store info timestamps" error.
+		// TODO: Figure out "couldn't read cache file to update store info timestamps" error
+		// for cache name "pins"
 		// For now, made cachename nil
 		// Might be related to http://www.openradar.me/28361550
 		fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: nil)
@@ -92,7 +93,7 @@ class TravelLocationsMapViewController: UIViewController {
 		mapView.delegate = self
 		
 		let longPress = UILongPressGestureRecognizer(target: self, action: #selector(self.mapLongPress(_:))) // colon needs to pass through info
-		longPress.minimumPressDuration = 1.0
+		longPress.minimumPressDuration = 0.8
 		mapView.addGestureRecognizer(longPress)
 		
 		restorePersistedMapRegion()
@@ -236,9 +237,86 @@ extension TravelLocationsMapViewController: MKMapViewDelegate {
 			self.annotationSelected(annotation: annotation)
 		}
 	}
+	
+	func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+		return nil
+	}
+	
+	func mapView(_ mapView: MKMapView, didAdd views: [MKAnnotationView]) {
+		var i = -1
+		for view in views {
+			i += 1
+			if view.annotation is MKUserLocation {
+				continue
+			}
+			
+			// Check if current annotation is inside visible map rect, else go to next one
+			let point:MKMapPoint = MKMapPointForCoordinate(view.annotation!.coordinate);
+			if (!MKMapRectContainsPoint(self.mapView.visibleMapRect, point)) {
+				continue
+			}
+			
+			let endFrame:CGRect = view.frame
+			
+			// Move annotation out of view
+			view.frame = CGRect(x: view.frame.origin.x, y: view.frame.origin.y - self.view.frame.size.height, width: view.frame.size.width, height: view.frame.size.height)
+			// Animate drop
+			let delay = 0.03 * Double(i)
+			UIView.animate(withDuration: 0.5, delay: delay, options: UIViewAnimationOptions.curveEaseIn, animations:{() in
+				view.frame = endFrame
+				// Animate squash
+			}, completion:{(Bool) in
+				UIView.animate(withDuration: 0.04, delay: 0.0, options: UIViewAnimationOptions.curveEaseOut, animations:{() in
+					view.transform = CGAffineTransform.init(scaleX: 1.0, y: 0.8)
+					
+				}, completion: {(Bool) in
+					UIView.animate(withDuration: 0.2, delay: 0.0, options: UIViewAnimationOptions.curveEaseInOut, animations:{() in
+						view.transform = CGAffineTransform.identity
+					}, completion: nil)
+				})
+				
+			})
+		}
+		
+//		var i = -1;
+//		for view in views {
+//			i += 1;
+//			if view.annotation is MKUserLocation {
+//				continue;
+//			}
+//
+//			// Check if current annotation is inside visible map rect, else go to next one
+//			let point:MKMapPoint  =  MKMapPointForCoordinate(view.annotation!.coordinate);
+//			if (!MKMapRectContainsPoint(self.mapView.visibleMapRect, point)) {
+//				continue;
+//			}
+//
+//			let endFrame:CGRect = view.frame;
+//
+//			// Move annotation out of view
+//			view.frame = CGRect(origin: CGPoint(x: view.frame.origin.x,y :view.frame.origin.y-self.view.frame.size.height), size: CGSize(width: view.frame.size.width, height: view.frame.size.height))
+//
+//			// Animate drop
+//			let delay = 0.03 * Double(i)
+//			UIView.animate(withDuration: 0.5, delay: delay, options: UIViewAnimationOptions.curveEaseIn, animations:{() in
+//				view.frame = endFrame
+//				// Animate squash
+//			}, completion:{(Bool) in
+//				UIView.animate(withDuration: 0.05, delay: 0.0, options: UIViewAnimationOptions.curveEaseInOut, animations:{() in
+//					view.transform = CGAffineTransform(scaleX: 1.0, y: 0.6)
+//
+//				}, completion: {(Bool) in
+//					UIView.animate(withDuration: 0.3, delay: 0.0, options: UIViewAnimationOptions.curveEaseInOut, animations:{() in
+//						view.transform = CGAffineTransform.identity
+//					}, completion: nil)
+//				})
+//
+//			})
+//		}
+	}
 }
 
-// MARK: - MapView Delegate Extension
+// MARK: - Fetched Result Controller Delegate Extension
 extension TravelLocationsMapViewController: NSFetchedResultsControllerDelegate {
 	func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
 		switch type {

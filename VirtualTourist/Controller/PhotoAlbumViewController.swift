@@ -66,7 +66,7 @@ class PhotoAlbumViewController: UICollectionViewController {
 	}
 	
 	func makeToolbarItems() -> [UIBarButtonItem] {
-		let newCollection = UIBarButtonItem(title: "New Collection", style: .plain, target: self, action: #selector(refreshPhotos(sender:)))
+		let newCollection = UIBarButtonItem(title: "New Collection", style: .plain, target: self, action: #selector(newCollection(sender:)))
 		newCollection.isEnabled = false
 		self.newCollectionButton.title = "Fetching Photos..."
 		self.newCollectionButton = newCollection
@@ -77,17 +77,18 @@ class PhotoAlbumViewController: UICollectionViewController {
 	// Make things prettier
 	fileprivate func configureCollectionView() {
 		let flow = UICollectionViewFlowLayout()
-		let itemSpacing: CGFloat = 1
+		let itemSpacing: CGFloat = 2
 		let minimumCellWidth: CGFloat = 120
 		let collectionViewWidth = collectionView!.bounds.size.width
 		
-		let itemsInOneLine = CGFloat(Int((collectionViewWidth - CGFloat(Int(collectionViewWidth / minimumCellWidth) - 1) * itemSpacing) / minimumCellWidth))
-		let width = collectionViewWidth - itemSpacing * (itemsInOneLine - 1)
-		let cellWidth = floor(width / itemsInOneLine)
-		let realItemSpacing = itemSpacing + (width / itemsInOneLine - cellWidth) * itemsInOneLine / (itemsInOneLine - 1)
+		let itemsPerLine = CGFloat(Int((collectionViewWidth - CGFloat(Int(collectionViewWidth / minimumCellWidth) - 1) * itemSpacing) / minimumCellWidth))
+		let width = collectionViewWidth - itemSpacing * (itemsPerLine - 1)
+		let cellWidth = floor(width / itemsPerLine)
+		let realItemSpacing = itemSpacing + (width / itemsPerLine - cellWidth) * itemsPerLine / (itemsPerLine - 1)
 		
-		flow.sectionInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
-		flow.itemSize = CGSize(width: cellWidth, height: cellWidth)
+		let edgeSpacing : CGFloat = 4
+		flow.sectionInset = UIEdgeInsets(top: edgeSpacing, left: edgeSpacing, bottom: edgeSpacing, right: edgeSpacing)
+		flow.itemSize = CGSize(width: cellWidth - edgeSpacing, height: cellWidth - edgeSpacing)
 		flow.minimumInteritemSpacing = realItemSpacing
 		flow.minimumLineSpacing = realItemSpacing
 		
@@ -95,8 +96,10 @@ class PhotoAlbumViewController: UICollectionViewController {
 	}
 	
 	func displayNoPhotos() {
-		let alert = UIAlertController(title: "Alert", message: "No photos for this location", preferredStyle: UIAlertControllerStyle.alert)
-		alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: nil))
+		let alert = UIAlertController(title: "No Photos", message: "Sorry! We couldn't find any pictures for this location", preferredStyle: UIAlertControllerStyle.alert)
+		alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: { alertAction in self.activityIndicator.stopAnimating()
+			self.navigationItem.title = "Album (No Photos)"
+		}))
 		self.present(alert, animated: true, completion: nil)
 	}
 	
@@ -108,7 +111,10 @@ class PhotoAlbumViewController: UICollectionViewController {
 		let sortDescriptor = NSSortDescriptor(key: "date", ascending: false)
 		fetchRequest.sortDescriptors = [sortDescriptor]
 		
-		fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: "\(pin)-photos")
+		// TODO: Figure out "couldn't read cache file to update store info timestamps" error
+		// for cache name "\(pin)-photos"
+		// For now, made cachename nil
+		fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: nil)
 		fetchedResultsController.delegate = self
 		
 		do {
@@ -129,12 +135,15 @@ class PhotoAlbumViewController: UICollectionViewController {
 		try? dataController.viewContext.save()
 	}
 	
-	@objc func refreshPhotos(sender: Any) {
+	@objc func newCollection(sender: Any) {
 		self.newCollectionButton.isEnabled = false
 		self.newCollectionButton.title = "Fetching Photos..."
 		self.activityIndicator.startAnimating()
 		
-		for photo in self.fetchedResultsController.fetchedObjects ?? [] {
+		// TODO: This locks up the UI. Do a background deal
+		var photos = 0
+		for photo in fetchedResultsController.fetchedObjects ?? [] {
+			photos += 1
 			deletePhoto(at: fetchedResultsController.indexPath(forObject: photo)!)
 		}
 		
@@ -155,10 +164,10 @@ class PhotoAlbumViewController: UICollectionViewController {
 				}
 				
 				// Because fetching can be slow, user might press the new collection button
-				// twice, accidentally. Having it enable after a while prevents this
-				DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+				// twice, accidentally. Having it enable after a delay prevents this.
+				self.newCollectionButton.title = "New Collection"
+				DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
 					self.newCollectionButton.isEnabled = true
-					self.newCollectionButton.title = "New Collection"
 				}
 				self.activityIndicator.stopAnimating()
 			} else {
@@ -171,7 +180,7 @@ class PhotoAlbumViewController: UICollectionViewController {
 	// TODO: Move this to FlickrAPIClient
 	fileprivate func downloadDataForPhoto(_ photo: Photo) {
 		if queued.contains(photo) {
-			print("PhotoAlbumView - Photo queued for download already")
+			print("PhotoAlbumView - Photo queued for download already. CollectionView delegate methods can fire multiple times.")
 			return
 		}
 		if let url = photo.url {
