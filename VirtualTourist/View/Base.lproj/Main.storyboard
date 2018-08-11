@@ -142,7 +142,7 @@
         <!--Album-->
         <scene sceneID="eQD-Vo-1T5">
             <objects>
-                <viewController title="Album" id="pNy-VN-bTT" customClass="PhotoAlbumViewController2" customModule="VirtualTourist" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController title="Album" id="pNy-VN-bTT" customClass="PhotoAlbumViewController" customModule="VirtualTourist" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="9YT-Yv-PdR">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>

@@ -31,6 +31,7 @@ class TravelLocationsMapViewController: UIViewController {
 		super.viewDidLoad()
 		setUpMap()
 		getPins()
+		configureToolbar()
 		setUpFetchedResultsController()
 		
 		self.trashButton = UIBarButtonItem(barButtonSystemItem: .trash, target: self, action: #selector(trashPins))
@@ -47,6 +48,14 @@ class TravelLocationsMapViewController: UIViewController {
 		persistMapRegion()
 	}
 	
+	func configureToolbar() {
+		let hint = UIBarButtonItem(title: "Tap a pin to delete it", style: .plain, target: self, action: nil)
+		hint.tintColor = UIColor.red
+		let space = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+		let items: [UIBarButtonItem] = [space, hint, space]
+		self.toolbarItems = items
+	}
+	
 	// MARK: - Navigation
 	fileprivate func showAlbumForPin(_ pin: Pin?) {
 		if let pin = pin {
@@ -57,7 +66,7 @@ class TravelLocationsMapViewController: UIViewController {
 	}
 	
 	override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-		if let vc = segue.destination as? PhotoAlbumViewController2 {
+		if let vc = segue.destination as? PhotoAlbumViewController {
 			vc.dataController = dataController
 			vc.flickrClient = flickrClient
 			vc.mapRegion = mapView.region
@@ -90,11 +99,12 @@ class TravelLocationsMapViewController: UIViewController {
 	}
 	
 	// MARK: - Map
+	// TODO: - Fix collisions of pins on drop (things kinda scoot outta the way and back)
 	fileprivate func setUpMap() {
 		mapView.delegate = self
 		
 		let longPress = UILongPressGestureRecognizer(target: self, action: #selector(self.mapLongPress(_:))) // colon needs to pass through info
-		longPress.minimumPressDuration = 0.8
+		longPress.minimumPressDuration = 0.5
 		mapView.addGestureRecognizer(longPress)
 		
 		restorePersistedMapRegion()
@@ -183,10 +193,11 @@ class TravelLocationsMapViewController: UIViewController {
 			self.editingMap = false
 			editButton.title = "Edit"
 			self.navigationItem.leftBarButtonItem = nil
+			navigationController?.setToolbarHidden(true, animated: true)
 		} else {
 			self.editingMap = true
 			editButton.title = "Done"
-			
+			navigationController?.setToolbarHidden(false, animated: true)
 			if (mapView.annotations.count > 0) {
 				self.trashButton.isEnabled = true
 			}
@@ -194,6 +205,7 @@ class TravelLocationsMapViewController: UIViewController {
 		}
 	}
 	
+	// TODO: - This process also takes a long time
 	@objc func trashPins() {
 		let alert = UIAlertController(title: "Delete Pins?", message: "Are you sure you want to delete all your pins, and their associated albums?", preferredStyle: UIAlertControllerStyle.alert)
 		alert.addAction(UIAlertAction(title: "Cancel", style: UIAlertActionStyle.default, handler: nil))
@@ -236,7 +248,7 @@ class TravelLocationsMapViewController: UIViewController {
 
 // MARK: - MapView Delegate Extension
 extension TravelLocationsMapViewController: MKMapViewDelegate {
-	// TODO: Fix pins disappearing on map move. See: https://stackoverflow.com/questions/49020023/mapkit-annotations-disappearing
+	// TODO: Fix pins disappearing on map move. This is also likely related to the collisions. See: https://stackoverflow.com/questions/49020023/mapkit-annotations-disappearing
 	func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
 		if let annotation = view.annotation {
 			self.annotationSelected(annotation: annotation)
@@ -282,42 +294,6 @@ extension TravelLocationsMapViewController: MKMapViewDelegate {
 				
 			})
 		}
-		
-//		var i = -1;
-//		for view in views {
-//			i += 1;
-//			if view.annotation is MKUserLocation {
-//				continue;
-//			}
-//
-//			// Check if current annotation is inside visible map rect, else go to next one
-//			let point:MKMapPoint  =  MKMapPointForCoordinate(view.annotation!.coordinate);
-//			if (!MKMapRectContainsPoint(self.mapView.visibleMapRect, point)) {
-//				continue;
-//			}
-//
-//			let endFrame:CGRect = view.frame;
-//
-//			// Move annotation out of view
-//			view.frame = CGRect(origin: CGPoint(x: view.frame.origin.x,y :view.frame.origin.y-self.view.frame.size.height), size: CGSize(width: view.frame.size.width, height: view.frame.size.height))
-//
-//			// Animate drop
-//			let delay = 0.03 * Double(i)
-//			UIView.animate(withDuration: 0.5, delay: delay, options: UIViewAnimationOptions.curveEaseIn, animations:{() in
-//				view.frame = endFrame
-//				// Animate squash
-//			}, completion:{(Bool) in
-//				UIView.animate(withDuration: 0.05, delay: 0.0, options: UIViewAnimationOptions.curveEaseInOut, animations:{() in
-//					view.transform = CGAffineTransform(scaleX: 1.0, y: 0.6)
-//
-//				}, completion: {(Bool) in
-//					UIView.animate(withDuration: 0.3, delay: 0.0, options: UIViewAnimationOptions.curveEaseInOut, animations:{() in
-//						view.transform = CGAffineTransform.identity
-//					}, completion: nil)
-//				})
-//
-//			})
-//		}
 	}
 }
 
