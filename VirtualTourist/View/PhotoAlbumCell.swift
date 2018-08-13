@@ -29,10 +29,10 @@ class PhotoAlbumCell: UICollectionViewCell {
 				imageView.image = image
 				self.activityIndicator.stopAnimating()
 			} else {
-				print("PhotoAlbumCell - Cell could not make image with data")
+				print("PhotoAlbumCell - Cell could not make image with data provided")
 			}
 		} else {
-			print("PhotoAlbumCell - setImageData was not provided data")
+			print("PhotoAlbumCell - \(#function) was not provided data")
 		}
 	}
 	

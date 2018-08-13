@@ -221,7 +221,7 @@ class PhotoAlbumViewController: UIViewController {
 	// TODO: Move this to FlickrAPIClient
 	fileprivate func downloadDataForPhoto(_ photo: Photo) {
 		if queued.contains(photo) {
-			print("PhotoAlbumView - Photo queued for download already. CollectionView delegate methods can fire multiple times.")
+			// We only start downloading the photo when the cell is about to be displayed
 			return
 		}
 		if let url = photo.url {
@@ -235,7 +235,7 @@ class PhotoAlbumViewController: UIViewController {
 					if let index = self.queued.index(of: photo) {
 						self.queued.remove(at: index)
 					}
-					print("PhotoAlbumView - Alamofire couldn't DL image")
+					print("PhotoAlbumView - Alamofire couldn't download image for url \(url)")
 				}
 			}
 			queued.append(photo)
@@ -243,7 +243,7 @@ class PhotoAlbumViewController: UIViewController {
 			if let index = queued.index(of: photo) {
 				queued.remove(at: index)
 			}
-			print("PhotoAlbumView -  could not download data for photo with no url")
+			print("PhotoAlbumView - photo \(photo) provided to \(#function) had no url property")
 		}
 	}
 }
@@ -255,8 +255,6 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
 			// TODO: Check to see if we really need this
 			if cell.indexPath == indexPath {
 				cell.setImageData(data: data)
-			} else {
-					print("CFRAIP - \(indexPath.row) - index paths do not match, not setting image")
 			}
 		} else {
 			downloadDataForPhoto(fetchedResultsController.object(at: indexPath))

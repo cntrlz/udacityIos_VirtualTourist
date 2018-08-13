@@ -21,7 +21,6 @@
 		5E6CB2192111144300591165 /* Alamofire.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5E6CB2162111144300591165 /* Alamofire.framework */; };
 		5E6CB21B2111180000591165 /* ObjectMapper.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5E6CB2142111144300591165 /* ObjectMapper.framework */; };
 		5E6CB21D2111188000591165 /* AlamofireObjectMapper.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5E6CB21C2111188000591165 /* AlamofireObjectMapper.framework */; };
-		5E6CB21F2111363000591165 /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6CB21E2111363000591165 /* File.swift */; };
 		5E6CB221211139A300591165 /* DataController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6CB220211139A300591165 /* DataController.swift */; };
 		5E6CB22321113CC100591165 /* MappedMinimalPhoto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6CB22221113CC100591165 /* MappedMinimalPhoto.swift */; };
 		5E6CB22521113CE800591165 /* MappedPhoto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6CB22421113CE800591165 /* MappedPhoto.swift */; };
@@ -67,7 +66,6 @@
 		5E6CB2152111144300591165 /* SwiftyJSON.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftyJSON.framework; path = Carthage/Build/iOS/SwiftyJSON.framework; sourceTree = "<group>"; };
 		5E6CB2162111144300591165 /* Alamofire.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Alamofire.framework; path = Carthage/Build/iOS/Alamofire.framework; sourceTree = "<group>"; };
 		5E6CB21C2111188000591165 /* AlamofireObjectMapper.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AlamofireObjectMapper.framework; path = Carthage/Build/iOS/AlamofireObjectMapper.framework; sourceTree = "<group>"; };
-		5E6CB21E2111363000591165 /* File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
 		5E6CB220211139A300591165 /* DataController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataController.swift; sourceTree = "<group>"; };
 		5E6CB22221113CC100591165 /* MappedMinimalPhoto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MappedMinimalPhoto.swift; sourceTree = "<group>"; };
 		5E6CB22421113CE800591165 /* MappedPhoto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MappedPhoto.swift; sourceTree = "<group>"; };
@@ -107,7 +105,6 @@
 		5E6CB1C7210FD33100591165 = {
 			isa = PBXGroup;
 			children = (
-				5E6CB21E2111363000591165 /* File.swift */,
 				5E6CB1D2210FD33100591165 /* VirtualTourist */,
 				5E6CB1EA210FD33400591165 /* VirtualTouristTests */,
 				5E6CB1F5210FD33400591165 /* VirtualTouristUITests */,
@@ -378,7 +375,6 @@
 			files = (
 				5E6CB221211139A300591165 /* DataController.swift in Sources */,
 				5E6CB20D2110C05200591165 /* FlickrAPIClient.swift in Sources */,
-				5E6CB21F2111363000591165 /* File.swift in Sources */,
 				5E6CB1D4210FD33100591165 /* AppDelegate.swift in Sources */,
 				5E6CB1DC210FD33100591165 /* VirtualTourist.xcdatamodeld in Sources */,
 				5E6CB209210FD62D00591165 /* TravelLocationsMapViewController.swift in Sources */,

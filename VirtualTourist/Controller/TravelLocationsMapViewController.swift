@@ -133,7 +133,6 @@ class TravelLocationsMapViewController: UIViewController {
 	}
 	
 	fileprivate func addAnnotationForPin(_ pin: Pin){
-		print("TravelLocationsMapViewController - adding pin for \(pin.latitude)-\(pin.longitude)")
 		let annotation = MKPointAnnotation()
 		annotation.coordinate = CLLocationCoordinate2D(latitude: pin.latitude, longitude: pin.longitude)
 		mapView.addAnnotation(annotation)
@@ -310,8 +309,6 @@ extension TravelLocationsMapViewController: NSFetchedResultsControllerDelegate {
 			let pin = anObject as! Pin
 			if let index = self.pins.index(of: pin) {
 				self.pins.remove(at: index)
-			} else {
-				print("TravelLocationsMapViewController - Attempted to delete a pin which was not in our array. This can be caused by  FetchedResultControllerDelegate methods firing multiple times.")
 			}
 			self.removeAnnotationForPin(pin)
 			break
