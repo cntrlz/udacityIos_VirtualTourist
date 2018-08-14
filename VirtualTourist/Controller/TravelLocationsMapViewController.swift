@@ -9,8 +9,10 @@
 import Foundation
 import MapKit
 import CoreData
-import Alamofire
+//import Alamofire
+import CoreLocation
 
+// TODO: Add a cool "See all my last places" by sorting for pins with "mine!" woo!
 class TravelLocationsMapViewController: UIViewController {
 	// IBOutlets
 	@IBOutlet weak var mapView: MKMapView!
@@ -19,7 +21,13 @@ class TravelLocationsMapViewController: UIViewController {
 	// Local properties
 	var pins: [Pin] = []
 	var editingMap: Bool = false
+	var showingMineOnly: Bool = false
+	var pinForCurrentLocation: Pin? = nil
 	var trashButton: UIBarButtonItem = UIBarButtonItem()
+	var onMeButton: UIBarButtonItem = UIBarButtonItem()
+	var myPinsButton: UIBarButtonItem = UIBarButtonItem()
+	let locationManager =  CLLocationManager()
+	var lastLocation: CLLocation = CLLocation()
 	
 	// Model properties
 	var flickrClient:FlickrAPIClient!
@@ -30,12 +38,11 @@ class TravelLocationsMapViewController: UIViewController {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		setUpMap()
-		getPins()
-		configureToolbar()
+		setUpLocationManager()
+		setUpBarButtons()
 		setUpFetchedResultsController()
-		
-		trashButton = UIBarButtonItem(barButtonSystemItem: .trash, target: self, action: #selector(trashPins))
-		trashButton.isEnabled = false
+		configureToolbar()
+		getPins()
 	}
 	
 	override func viewWillAppear(_ animated: Bool) {
@@ -46,6 +53,18 @@ class TravelLocationsMapViewController: UIViewController {
 	override func viewWillDisappear(_ animated: Bool) {
 		super.viewWillDisappear(animated)
 		persistMapRegion()
+	}
+	
+	func setUpBarButtons() {
+		trashButton = UIBarButtonItem(barButtonSystemItem: .trash, target: self, action: #selector(removeAllPins))
+		trashButton.isEnabled = false
+	
+		onMeButton = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(dropPinOnMe))
+		onMeButton.isEnabled = false
+		
+		myPinsButton = UIBarButtonItem(barButtonSystemItem: .bookmarks, target: self, action: #selector(showMyPins))
+		
+		navigationItem.leftBarButtonItems = [onMeButton, myPinsButton]
 	}
 	
 	func configureToolbar() {
@@ -97,12 +116,27 @@ class TravelLocationsMapViewController: UIViewController {
 		}
 	}
 	
+	// MARK: - Location
+	func setUpLocationManager() {
+		locationManager.delegate = self
+		locationManager.desiredAccuracy = kCLLocationAccuracyBest
+		locationManager.requestWhenInUseAuthorization()
+		locationManager.startUpdatingLocation()
+	}
+	
+	func updateLocation(_ location: CLLocation) {
+		if (pinForCurrentLocation == nil) {
+			onMeButton.isEnabled = true
+		}
+		lastLocation = location
+	}
+	
 	// MARK: - Map
 	// TODO: - Fix collisions of pins on drop (things kinda scoot outta the way and back)
 	fileprivate func setUpMap() {
 		mapView.delegate = self
 		
-		let longPress = UILongPressGestureRecognizer(target: self, action: #selector(self.mapLongPress(_:))) // colon needs to pass through info
+		let longPress = UILongPressGestureRecognizer(target: self, action: #selector(self.dropPin(_:))) // colon needs to pass through info
 		longPress.minimumPressDuration = 0.5
 		mapView.addGestureRecognizer(longPress)
 		
@@ -149,8 +183,12 @@ class TravelLocationsMapViewController: UIViewController {
 	}
 	
 	// MARK: - Pins
-	fileprivate func getPins() {
+	fileprivate func getPins(mineOnly: Bool = false) {
 		let pinRequest: NSFetchRequest<Pin> = Pin.fetchRequest()
+		if (mineOnly) {
+			let predicate = NSPredicate(format: "mine == yes")
+			pinRequest.predicate = predicate
+		}
 		do {
 			let result = try dataController.viewContext.fetch(pinRequest)
 			pins = result
@@ -162,15 +200,21 @@ class TravelLocationsMapViewController: UIViewController {
 		}
 	}
 	
-	fileprivate func addPinForAnnotation(_ annotation: MKAnnotation) {
+	fileprivate func addPinForAnnotation(_ annotation: MKAnnotation, mine: Bool = false) {
 		let pin = Pin(context: dataController.viewContext)
 		pin.latitude = annotation.coordinate.latitude
 		pin.longitude = annotation.coordinate.longitude
+		
+		if (mine) {
+			pin.mine = mine
+			pinForCurrentLocation = pin
+		}
+		
 		try? dataController.viewContext.save()
 	}
 	
 	// MARK: - User Actions
-	@objc func mapLongPress(_ recognizer: UIGestureRecognizer) {
+	@objc func dropPin(_ recognizer: UIGestureRecognizer) {
 		if editingMap {
 			// Don't make new pins if we're editing
 			return
@@ -186,11 +230,35 @@ class TravelLocationsMapViewController: UIViewController {
 		}
 	}
 	
+	@objc func dropPinOnMe() {
+		if (pinForCurrentLocation == nil) {
+			let annotation = MKPointAnnotation()
+			annotation.coordinate = lastLocation.coordinate
+			mapView.addAnnotation(annotation)
+			addPinForAnnotation(annotation, mine: true)
+			
+			// Center the map
+			let center = CLLocationCoordinate2D(latitude: lastLocation.coordinate.latitude, longitude: lastLocation.coordinate.longitude)
+			let region = MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01))
+			
+			mapView.setRegion(region, animated: true)
+		} else {
+			let alert = UIAlertController(title: "Drop Another Pin?", message: "You already have a pin at your last location. Drop another one?", preferredStyle: UIAlertControllerStyle.alert)
+			alert.addAction(UIAlertAction(title: "Cancel", style: UIAlertActionStyle.default, handler: nil))
+			alert.addAction(UIAlertAction(title: "Another One", style: UIAlertActionStyle.default) { action in
+				self.pinForCurrentLocation = nil
+				self.dropPinOnMe()
+			})
+			present(alert, animated: true, completion: nil)
+		}
+		
+	}
+	
 	@IBAction func edit(_ sender: Any) {
 		if (editingMap) {
 			editingMap = false
 			editButton.title = "Edit"
-			navigationItem.leftBarButtonItem = nil
+			navigationItem.leftBarButtonItem = onMeButton
 			navigationController?.setToolbarHidden(true, animated: true)
 		} else {
 			editingMap = true
@@ -204,11 +272,11 @@ class TravelLocationsMapViewController: UIViewController {
 	}
 	
 	// TODO: - This process also takes a long time
-	@objc func trashPins() {
+	@objc func removeAllPins() {
 		let alert = UIAlertController(title: "Delete Pins?", message: "Are you sure you want to delete all your pins, and their associated albums?", preferredStyle: UIAlertControllerStyle.alert)
 		alert.addAction(UIAlertAction(title: "Cancel", style: UIAlertActionStyle.default, handler: nil))
 		alert.addAction(UIAlertAction(title: "Delete Pins", style: UIAlertActionStyle.destructive) { action in
-			// We don't have to wait for the fetched result controller's delegate methods to fire
+			// We don't have to wait for the fetched result controller's delegate methods to fire!
 			// It's slightly faster to clear these first, and just let the methods fire off whenever they do
 			self.pins = []
 			self.mapView.removeAnnotations(self.mapView.annotations)
@@ -218,6 +286,7 @@ class TravelLocationsMapViewController: UIViewController {
 				self.dataController.viewContext.delete(pin)
 			}
 			try? self.dataController.viewContext.save()
+			self.pinForCurrentLocation = nil
 		})
 		present(alert, animated: true, completion: nil)
 	}
@@ -226,6 +295,9 @@ class TravelLocationsMapViewController: UIViewController {
 		dataController.viewContext.delete(pin!)
 		if let index = pins.index(of: pin!) {
 			pins.remove(at: index)
+		}
+		if (pin == pinForCurrentLocation) {
+			pinForCurrentLocation = nil
 		}
 		removeAnnotationForPin(pin!)
 	}
@@ -240,6 +312,19 @@ class TravelLocationsMapViewController: UIViewController {
 				showAlbumForPin(pin)
 				mapView.deselectAnnotation(annotation, animated: true)
 			}
+		}
+	}
+	
+	// MARK: - In progress
+	@objc func showMyPins() {
+		if (showingMineOnly) {
+			showingMineOnly = false
+			mapView.removeAnnotations(mapView.annotations)
+			getPins()
+		} else {
+			showingMineOnly = true
+			mapView.removeAnnotations(mapView.annotations)
+			getPins(mineOnly: true)
 		}
 	}
 }
@@ -257,6 +342,7 @@ extension TravelLocationsMapViewController: MKMapViewDelegate {
 		return nil
 	}
 	
+	// Add some cool animations!
 	func mapView(_ mapView: MKMapView, didAdd views: [MKAnnotationView]) {
 		var i = -1
 		for view in views {
@@ -273,17 +359,16 @@ extension TravelLocationsMapViewController: MKMapViewDelegate {
 			
 			let endFrame:CGRect = view.frame
 			
-			// Move annotation out of view
+			// Move annotation out of the view
 			view.frame = CGRect(x: view.frame.origin.x, y: view.frame.origin.y - view.frame.size.height, width: view.frame.size.width, height: view.frame.size.height)
-			// Animate drop
+			// Animate the drop
 			let delay = 0.03 * Double(i)
 			UIView.animate(withDuration: 0.5, delay: delay, options: UIViewAnimationOptions.curveEaseIn, animations:{() in
 				view.frame = endFrame
-				// Animate squash
+				// Animate the squish
 			}, completion:{(Bool) in
 				UIView.animate(withDuration: 0.04, delay: 0.0, options: UIViewAnimationOptions.curveEaseOut, animations:{() in
 					view.transform = CGAffineTransform.init(scaleX: 1.0, y: 0.8)
-					
 				}, completion: {(Bool) in
 					UIView.animate(withDuration: 0.2, delay: 0.0, options: UIViewAnimationOptions.curveEaseInOut, animations:{() in
 						view.transform = CGAffineTransform.identity
@@ -318,5 +403,11 @@ extension TravelLocationsMapViewController: NSFetchedResultsControllerDelegate {
 			// Similarly, we don't need to do anything here
 			break
 		}
+	}
+}
+
+extension TravelLocationsMapViewController: CLLocationManagerDelegate {
+	func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+		updateLocation(locations.last! as CLLocation)
 	}
 }

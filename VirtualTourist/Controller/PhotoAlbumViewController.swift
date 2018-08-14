@@ -19,6 +19,7 @@ class PhotoAlbumViewController: UIViewController {
 	
 	// UI Elements
 	var newCollectionButton: UIBarButtonItem = UIBarButtonItem()
+	var deleteAlbumButton: UIBarButtonItem = UIBarButtonItem()
 	var activityIndicator: UIActivityIndicatorView = UIActivityIndicatorView()
 	
 	// Model
@@ -33,10 +34,10 @@ class PhotoAlbumViewController: UIViewController {
 
 	// MARK: - View
 	override func viewDidLoad() {
-		setupFetchedResultsController()
 		configureView()
 		configureMapView()
 		configureCollectionView()
+		setupFetchedResultsController()
 	}
 	
 	override func viewWillAppear(_ animated: Bool) {
@@ -58,8 +59,9 @@ class PhotoAlbumViewController: UIViewController {
 		configureToolbarItems()
 		configureActivityIndicator()
 		
-		let deleteButton = UIBarButtonItem(barButtonSystemItem: .trash, target: self, action: #selector(deleteAlbum))
-		navigationItem.rightBarButtonItem = deleteButton
+		deleteAlbumButton = UIBarButtonItem(barButtonSystemItem: .trash, target: self, action: #selector(deleteAlbum))
+		deleteAlbumButton.isEnabled = false
+		navigationItem.rightBarButtonItem = deleteAlbumButton
 	}
 
 	func configureToolbarItems() {
@@ -146,6 +148,8 @@ class PhotoAlbumViewController: UIViewController {
 			if (fetchedResultsController.sections?[0].numberOfObjects == 0) {
 				print("PhotoAlbumView - No photos yet for pin, downloading photos")
 				downloadPhotosForPin(pin)
+			} else {
+				deleteAlbumButton.isEnabled = true
 			}
 		} catch {
 			fatalError("PhotoAlbumView - The fetch could not be performed: \(error.localizedDescription)")
@@ -163,7 +167,7 @@ class PhotoAlbumViewController: UIViewController {
 	
 	fileprivate func deletePin() {
 		if let vc = navigationController?.viewControllers.first as? TravelLocationsMapViewController {
-			vc.deletePin(self.pin)
+			vc.deletePin(pin)
 			pin = nil
 			navigationController?.popViewController(animated: true)
 		}
@@ -194,6 +198,7 @@ class PhotoAlbumViewController: UIViewController {
 		activityIndicator.startAnimating()
 		
 		deleteAllPhotos()
+		deleteAlbumButton.isEnabled = false
 		downloadPhotosForPin(pin)
 	}
 	
@@ -215,13 +220,14 @@ class PhotoAlbumViewController: UIViewController {
 				// It'll lock up the UI!
 				
 				self.newCollectionButton.title = "New Collection"
-				
-				// Discourage jammin' on the refresh button by adding a delay
+				// Discourage jammin' on the refresh/delete button by adding a delay
 				DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
 					self.newCollectionButton.isEnabled = true
+					self.deleteAlbumButton.isEnabled = true
 				}
 				self.activityIndicator.stopAnimating()
 			} else {
+				self.deleteAlbumButton.isEnabled = true
 				self.displayNoPhotos()
 			}
 		}
@@ -299,11 +305,13 @@ extension PhotoAlbumViewController: NSFetchedResultsControllerDelegate {
 	}
 	
 	func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-		collectionView.performBatchUpdates({
-			self.blockOperations.forEach { $0.start() }
-		}, completion: { finished in
-			self.blockOperations.removeAll(keepingCapacity: false)
-		})
+		if (self.pin != nil) {
+			collectionView.performBatchUpdates({
+				self.blockOperations.forEach { $0.start() }
+			}, completion: { finished in
+				self.blockOperations.removeAll(keepingCapacity: false)
+			})
+		}
 	}
 }
 
