@@ -21,7 +21,7 @@ class TravelLocationsMapViewController: UIViewController {
 	// Local properties
 	var pins: [Pin] = []
 	var editingMap: Bool = false
-	var showingMineOnly: Bool = false
+	var pinViewMode: Int = 0 // 0 shows all, 1 shows mine, 2 shows not mine
 	var pinForCurrentLocation: Pin? = nil
 	var trashButton: UIBarButtonItem = UIBarButtonItem()
 	var onMeButton: UIBarButtonItem = UIBarButtonItem()
@@ -62,7 +62,7 @@ class TravelLocationsMapViewController: UIViewController {
 		onMeButton = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(dropPinOnMe))
 		onMeButton.isEnabled = false
 		
-		myPinsButton = UIBarButtonItem(barButtonSystemItem: .bookmarks, target: self, action: #selector(showMyPins))
+		myPinsButton = UIBarButtonItem(barButtonSystemItem: .bookmarks, target: self, action: #selector(changePinViewMode))
 		
 		navigationItem.leftBarButtonItems = [onMeButton, myPinsButton]
 	}
@@ -73,6 +73,49 @@ class TravelLocationsMapViewController: UIViewController {
 		let space = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
 		let items: [UIBarButtonItem] = [space, hint, space]
 		toolbarItems = items
+	}
+	
+	@objc func changePinViewMode() {
+		showFirstTimeUsingMyPlaces()
+		if (pinViewMode == 0) {
+			pinViewMode = 1
+			mapView.removeAnnotations(mapView.annotations)
+			getPins(mine: true)
+		} else if (pinViewMode == 1) {
+			pinViewMode = 2
+			mapView.removeAnnotations(mapView.annotations)
+			getPins(mine: true, exclusive: true)
+		} else if (pinViewMode == 2) {
+			pinViewMode = 0
+			mapView.removeAnnotations(mapView.annotations)
+			getPins()
+		}
+	}
+	
+	fileprivate func showFirstUseDropPinOnMe() {
+		let defaults = UserDefaults.standard
+		let hasReadDropPinsOnMeMessage = defaults.bool(forKey: "hasReadDropPinsOnMeMessage")
+		if (!hasReadDropPinsOnMeMessage) {
+			showAlertWith(title: "Drop a Pin on Me!", message: "You can use this button to drop pins at your current location.", action: UIAlertAction(title: "Got it", style: UIAlertActionStyle.default) { action in
+				defaults.set(true, forKey: "hasReadDropPinsOnMeMessage")
+			})
+		}
+	}
+	
+	fileprivate func showFirstTimeUsingMyPlaces() {
+		let defaults = UserDefaults.standard
+		let hasReadMyPlacesMessage = defaults.bool(forKey: "hasReadMyPlacesMessage")
+		if (!hasReadMyPlacesMessage) {
+			showAlertWith(title: "My Places", message: "You can use this to filter for pins you've dropped using your location data!", action: UIAlertAction(title: "Got it", style: UIAlertActionStyle.default) { action in
+				defaults.set(true, forKey: "hasReadMyPlacesMessage")
+			})
+		}
+	}
+	
+	fileprivate func showAlertWith(title: String = "Alert", message: String = "Message", action: UIAlertAction) {
+		let alert = UIAlertController(title: title, message: message, preferredStyle: UIAlertControllerStyle.alert)
+		alert.addAction(action)
+		present(alert, animated: true, completion: nil)
 	}
 	
 	// MARK: - Navigation
@@ -183,10 +226,11 @@ class TravelLocationsMapViewController: UIViewController {
 	}
 	
 	// MARK: - Pins
-	fileprivate func getPins(mineOnly: Bool = false) {
+	fileprivate func getPins(mine: Bool = false, exclusive: Bool = false) {
 		let pinRequest: NSFetchRequest<Pin> = Pin.fetchRequest()
-		if (mineOnly) {
-			let predicate = NSPredicate(format: "mine == yes")
+		if (mine) {
+			let format = exclusive ? "mine == no" : "mine == yes"
+			let predicate = NSPredicate(format: format)
 			pinRequest.predicate = predicate
 		}
 		do {
@@ -194,6 +238,11 @@ class TravelLocationsMapViewController: UIViewController {
 			pins = result
 			for pin in pins {
 				addAnnotationForPin(pin)
+			}
+			if (mapView.annotations.count == 0) {
+				trashButton.isEnabled = false
+			} else {
+				trashButton.isEnabled = true
 			}
 		} catch {
 			fatalError("TravelLocationsMapViewController - The initial fetch for pins in \(#function) could not be performed: \(error.localizedDescription)")
@@ -231,6 +280,7 @@ class TravelLocationsMapViewController: UIViewController {
 	}
 	
 	@objc func dropPinOnMe() {
+		showFirstUseDropPinOnMe()
 		if (pinForCurrentLocation == nil) {
 			let annotation = MKPointAnnotation()
 			annotation.coordinate = lastLocation.coordinate
@@ -312,19 +362,6 @@ class TravelLocationsMapViewController: UIViewController {
 				showAlbumForPin(pin)
 				mapView.deselectAnnotation(annotation, animated: true)
 			}
-		}
-	}
-	
-	// MARK: - In progress
-	@objc func showMyPins() {
-		if (showingMineOnly) {
-			showingMineOnly = false
-			mapView.removeAnnotations(mapView.annotations)
-			getPins()
-		} else {
-			showingMineOnly = true
-			mapView.removeAnnotations(mapView.annotations)
-			getPins(mineOnly: true)
 		}
 	}
 }
