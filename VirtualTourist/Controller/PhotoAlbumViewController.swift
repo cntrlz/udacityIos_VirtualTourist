@@ -199,27 +199,31 @@ class PhotoAlbumViewController: UIViewController {
 	
 	func downloadPhotosForPin(_ pin: Pin){
 		flickrClient.downloadPhotosForPin(pin) { photos in
-			for photo in photos {
-				if let imageURL = photo.url() {
-					let photo = Photo(context: self.dataController.viewContext)
-					photo.pin = pin
-					photo.url = imageURL.absoluteString
-					photo.date = Date()
+			if photos != nil {
+				for photo in photos! {
+					if let imageURL = photo.url() {
+						let photo = Photo(context: self.dataController.viewContext)
+						photo.pin = pin
+						photo.url = imageURL.absoluteString
+						photo.date = Date()
+					}
 				}
+				// Saving in the block becomes terrifyingly slow - so we save at the end...
+				try? self.dataController.viewContext.save()
+				// ... but then we must queue up our updates to the collection view,
+				// since we can't do a beginUpdates/endUpdates like with a tableView!
+				// It'll lock up the UI!
+				
+				self.newCollectionButton.title = "New Collection"
+				
+				// Discourage jammin' on the refresh button by adding a delay
+				DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+					self.newCollectionButton.isEnabled = true
+				}
+				self.activityIndicator.stopAnimating()
+			} else {
+				self.displayNoPhotos()
 			}
-			// Saving in the block becomes terrifyingly slow - we save at the end...
-			try? self.dataController.viewContext.save()
-			// ... but then we must queue up our updates to the collection view,
-			// since we can't do a beginUpdates/endUpdates like with a tableView!
-			// It'll lock up the UI!
-			
-			self.newCollectionButton.title = "New Collection"
-			
-			// Discourage jammin' on the refresh button by adding a delay
-			DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-				self.newCollectionButton.isEnabled = true
-			}
-			self.activityIndicator.stopAnimating()
 		}
 	}
 	

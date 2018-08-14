@@ -34,8 +34,8 @@ class TravelLocationsMapViewController: UIViewController {
 		configureToolbar()
 		setUpFetchedResultsController()
 		
-		self.trashButton = UIBarButtonItem(barButtonSystemItem: .trash, target: self, action: #selector(trashPins))
-		self.trashButton.isEnabled = false
+		trashButton = UIBarButtonItem(barButtonSystemItem: .trash, target: self, action: #selector(trashPins))
+		trashButton.isEnabled = false
 	}
 	
 	override func viewWillAppear(_ animated: Bool) {
@@ -53,13 +53,13 @@ class TravelLocationsMapViewController: UIViewController {
 		hint.tintColor = UIColor.red
 		let space = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
 		let items: [UIBarButtonItem] = [space, hint, space]
-		self.toolbarItems = items
+		toolbarItems = items
 	}
 	
 	// MARK: - Navigation
 	fileprivate func showAlbumForPin(_ pin: Pin?) {
 		if let pin = pin {
-			self.performSegue(withIdentifier: "showAlbumView2", sender: pin)
+			performSegue(withIdentifier: "showAlbumView2", sender: pin)
 		} else {
 			print("TravelLocationsMapViewController - Error - No pin provided to \(#function). This shouldn't happen.")
 		}
@@ -85,8 +85,7 @@ class TravelLocationsMapViewController: UIViewController {
 		fetchRequest.sortDescriptors = [sortDescriptor]
 		
 		// TODO: Figure out "couldn't read cache file to update store info timestamps" error
-		// for cache name "pins"
-		// For now, made cachename nil
+		// for cache name "pins". For now, made cachename nil
 		// Might be related to http://www.openradar.me/28361550
 		fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: nil)
 		fetchedResultsController.delegate = self
@@ -143,7 +142,7 @@ class TravelLocationsMapViewController: UIViewController {
 			if annotation.coordinate.latitude == pin.latitude && annotation.coordinate.longitude == pin.longitude {
 				mapView.removeAnnotation(annotation)
 				if (mapView.annotations.count == 0) {
-					self.trashButton.isEnabled = false
+					trashButton.isEnabled = false
 				}
 			}
 		}
@@ -154,8 +153,8 @@ class TravelLocationsMapViewController: UIViewController {
 		let pinRequest: NSFetchRequest<Pin> = Pin.fetchRequest()
 		do {
 			let result = try dataController.viewContext.fetch(pinRequest)
-			self.pins = result
-			for pin in self.pins {
+			pins = result
+			for pin in pins {
 				addAnnotationForPin(pin)
 			}
 		} catch {
@@ -172,13 +171,13 @@ class TravelLocationsMapViewController: UIViewController {
 	
 	// MARK: - User Actions
 	@objc func mapLongPress(_ recognizer: UIGestureRecognizer) {
-		if self.editingMap {
+		if editingMap {
 			// Don't make new pins if we're editing
 			return
 		}
 		if (recognizer.state == .began) {
-			let location = recognizer.location(in: self.mapView)
-			let coordinate : CLLocationCoordinate2D = mapView.convert(location, toCoordinateFrom: self.mapView)
+			let location = recognizer.location(in: mapView)
+			let coordinate : CLLocationCoordinate2D = mapView.convert(location, toCoordinateFrom: mapView)
 			
 			let annotation = MKPointAnnotation()
 			annotation.coordinate = coordinate
@@ -188,19 +187,19 @@ class TravelLocationsMapViewController: UIViewController {
 	}
 	
 	@IBAction func edit(_ sender: Any) {
-		if (self.editingMap) {
-			self.editingMap = false
+		if (editingMap) {
+			editingMap = false
 			editButton.title = "Edit"
-			self.navigationItem.leftBarButtonItem = nil
+			navigationItem.leftBarButtonItem = nil
 			navigationController?.setToolbarHidden(true, animated: true)
 		} else {
-			self.editingMap = true
+			editingMap = true
 			editButton.title = "Done"
 			navigationController?.setToolbarHidden(false, animated: true)
 			if (mapView.annotations.count > 0) {
-				self.trashButton.isEnabled = true
+				trashButton.isEnabled = true
 			}
-			self.navigationItem.leftBarButtonItem = self.trashButton
+			navigationItem.leftBarButtonItem = trashButton
 		}
 	}
 	
@@ -220,26 +219,26 @@ class TravelLocationsMapViewController: UIViewController {
 			}
 			try? self.dataController.viewContext.save()
 		})
-		self.present(alert, animated: true, completion: nil)
+		present(alert, animated: true, completion: nil)
 	}
 	
 	func deletePin(_ pin: Pin?) {
-		self.dataController.viewContext.delete(pin!)
-		if let index = self.pins.index(of: pin!) {
-			self.pins.remove(at: index)
+		dataController.viewContext.delete(pin!)
+		if let index = pins.index(of: pin!) {
+			pins.remove(at: index)
 		}
-		self.removeAnnotationForPin(pin!)
+		removeAnnotationForPin(pin!)
 	}
 	
 	func annotationSelected(annotation: MKAnnotation!) {
-		let pin = self.pins.filter{$0.longitude == annotation.coordinate.longitude && $0.latitude == annotation.coordinate.latitude}.first
+		let pin = pins.filter{$0.longitude == annotation.coordinate.longitude && $0.latitude == annotation.coordinate.latitude}.first
 		if pin != nil {
-			if self.editingMap {
-				self.mapView.deselectAnnotation(annotation, animated: true)
+			if editingMap {
+				mapView.deselectAnnotation(annotation, animated: true)
 				deletePin(pin)
 			} else {
 				showAlbumForPin(pin)
-				self.mapView.deselectAnnotation(annotation, animated: true)
+				mapView.deselectAnnotation(annotation, animated: true)
 			}
 		}
 	}
@@ -250,7 +249,7 @@ extension TravelLocationsMapViewController: MKMapViewDelegate {
 	// TODO: Fix pins disappearing on map move. This is also likely related to the collisions. See: https://stackoverflow.com/questions/49020023/mapkit-annotations-disappearing
 	func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
 		if let annotation = view.annotation {
-			self.annotationSelected(annotation: annotation)
+			annotationSelected(annotation: annotation)
 		}
 	}
 	
@@ -268,14 +267,14 @@ extension TravelLocationsMapViewController: MKMapViewDelegate {
 			
 			// Check if current annotation is inside visible map rect, else go to next one
 			let point:MKMapPoint = MKMapPointForCoordinate(view.annotation!.coordinate);
-			if (!MKMapRectContainsPoint(self.mapView.visibleMapRect, point)) {
+			if (!MKMapRectContainsPoint(mapView.visibleMapRect, point)) {
 				continue
 			}
 			
 			let endFrame:CGRect = view.frame
 			
 			// Move annotation out of view
-			view.frame = CGRect(x: view.frame.origin.x, y: view.frame.origin.y - self.view.frame.size.height, width: view.frame.size.width, height: view.frame.size.height)
+			view.frame = CGRect(x: view.frame.origin.x, y: view.frame.origin.y - view.frame.size.height, width: view.frame.size.width, height: view.frame.size.height)
 			// Animate drop
 			let delay = 0.03 * Double(i)
 			UIView.animate(withDuration: 0.5, delay: delay, options: UIViewAnimationOptions.curveEaseIn, animations:{() in
@@ -302,15 +301,15 @@ extension TravelLocationsMapViewController: NSFetchedResultsControllerDelegate {
 		switch type {
 		case .insert:
 			let pin = anObject as! Pin
-			self.pins.append(pin)
-			self.addAnnotationForPin(pin)
+			pins.append(pin)
+			addAnnotationForPin(pin)
 			break
 		case .delete:
 			let pin = anObject as! Pin
-			if let index = self.pins.index(of: pin) {
-				self.pins.remove(at: index)
+			if let index = pins.index(of: pin) {
+				pins.remove(at: index)
 			}
-			self.removeAnnotationForPin(pin)
+			removeAnnotationForPin(pin)
 			break
 		case .update:
 			// We don't actually care about updates. The user cannot modify a Pin's coordinates at this time
