@@ -11,6 +11,7 @@
 import Foundation
 import Alamofire
 import AlamofireObjectMapper
+import UIKit
 //import SwiftyJSON // unneeded
 //import ObjectMapper
 
@@ -30,6 +31,8 @@ class FlickrAPIClient {
 	var endLat = 48.587958419830336		// get rid of this when done
 	var endLong = -120.5518607421875	// get rid of this when done
 	let sortOptions = ["date-posted-asc", "date-posted-desc", "date-taken-asc", "date-taken-desc", "interestingness-desc", "interestingness-asc", "relevance"]
+	
+	var queued: [Photo] = []
 
 	func test() {
 		self.getPhotosForBoundingBox(startingLatitude: startLat, startingLongitude: startLong, endingLatitude: endLat, endingLongitude: endLong)
@@ -80,6 +83,10 @@ class FlickrAPIClient {
 		}
 	}
 	
+	func appDelegate () -> AppDelegate {
+		return UIApplication.shared.delegate as! AppDelegate
+	}
+	
 	func getBboxCornersForPointWith(lat: Double, long: Double, radius: Double = 0.5 ) -> [Double]{
 		// Earth's circumference at the equator divided by 360 degrees
 		let latitudeToMiles = 24901.92 / 360 // Approx 69.2 mi
@@ -102,6 +109,56 @@ class FlickrAPIClient {
 		//		let lonMax = region.center.longitude + 0.5 * region.span.longitudeDelta;
 		
 		return [southernmostLatitude,westernLongitude,northernmostLatitude,easternLongitude]
+	}
+	
+	func downloadDataForPhoto(_ photo: Photo, _ completion: @escaping (Data?)-> Void = {_ in }) {
+		if queued.contains(photo) {
+			// Discard any duplicate requests
+			return
+		}
+		if let url = photo.url {
+			Alamofire.request(url).responseData { (response) in
+				if response.error == nil {
+					completion(response.data)
+				} else {
+					if let index = self.queued.index(of: photo) {
+						self.queued.remove(at: index)
+					}
+				}
+				
+//				DispatchQueue.main.async {
+//					if response.error == nil {
+//						// TODO: Check if this is the right move
+//							if let data = response.data {
+//								photo.imageData = data
+//								try? self.appDelegate().dataController.viewContext.save()
+//							}
+//					} else {
+//						if let index = self.queued.index(of: photo) {
+//							self.queued.remove(at: index)
+//						}
+//						print("FlickrAPIClient - Alamofire couldn't download image for url \(url)")
+//					}
+//				}
+			}
+			queued.append(photo)
+		} else {
+			if let index = queued.index(of: photo) {
+				queued.remove(at: index)
+			}
+			print("FlickrAPIClient - photo \(photo) provided to \(#function) had no url property")
+		}
+	}
+	
+	func downloadPhotosForPin(_ pin: Pin, _ completion: @escaping ([MappedPhoto]) -> Void = {_ in }){
+		getPhotosForLatitude(pin.latitude, longitude: pin.longitude){ photos in
+			if let photos = photos {
+				print("FlickrAPIClient \(#function) returned \(photos.count) objects")
+				completion(photos)
+			} else {
+				print("error getting photos for pin, have completiong accept nil or error")
+			}
+		}
 	}
 	
 	// TODO: Move data fetching and stuff from photo controller to here

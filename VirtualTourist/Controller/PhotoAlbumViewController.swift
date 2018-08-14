@@ -28,8 +28,8 @@ class PhotoAlbumViewController: UIViewController {
 	
 	// Local properties
 	var pin: Pin!
-	var queued: [Photo] = []
 	var mapRegion: MKCoordinateRegion = MKCoordinateRegion()
+	var blockOperations: [BlockOperation] = []
 
 	// MARK: - View
 	override func viewDidLoad() {
@@ -125,7 +125,7 @@ class PhotoAlbumViewController: UIViewController {
 		}))
 		alert.addAction(UIAlertAction(title: "Delete Pin", style: UIAlertActionStyle.destructive, handler: { alertAction in self.deletePin()
 		}))
-		self.present(alert, animated: true, completion: nil)
+		present(alert, animated: true, completion: nil)
 	}
 	
 	// MARK: - Core Data
@@ -137,16 +137,15 @@ class PhotoAlbumViewController: UIViewController {
 		fetchRequest.sortDescriptors = [sortDescriptor]
 		
 		// TODO: Figure out "couldn't read cache file to update store info timestamps" error
-		// for cache name "\(pin)-photos"
-		// For now, made cachename nil
+		// for cache name "\(pin)-photos". For now, made cachename nil
 		fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: nil)
 		fetchedResultsController.delegate = self
 		
 		do {
 			try fetchedResultsController.performFetch()
-			if(fetchedResultsController.sections?[0].numberOfObjects == 0){
+			if (fetchedResultsController.sections?[0].numberOfObjects == 0) {
 				print("PhotoAlbumView - No photos yet for pin, downloading photos")
-				self.downloadPhotosForPin(pin)
+				downloadPhotosForPin(pin)
 			}
 		} catch {
 			fatalError("PhotoAlbumView - The fetch could not be performed: \(error.localizedDescription)")
@@ -159,91 +158,78 @@ class PhotoAlbumViewController: UIViewController {
 		alert.addAction(UIAlertAction(title: "Delete Album", style: UIAlertActionStyle.destructive) { action in
 			self.deletePin()
 		})
-		self.present(alert, animated: true, completion: nil)
+		present(alert, animated: true, completion: nil)
 	}
 	
 	fileprivate func deletePin() {
-		if let vc = self.navigationController?.viewControllers.first as? TravelLocationsMapViewController {
+		if let vc = navigationController?.viewControllers.first as? TravelLocationsMapViewController {
 			vc.deletePin(self.pin)
-			self.pin = nil
+			pin = nil
+			navigationController?.popViewController(animated: true)
 		}
-		
-		self.navigationController?.popViewController(animated: true)
 	}
 	
 	// MARK: - Photos
-	func deletePhoto(at indexPath: IndexPath) {
-		let photoToDelete = fetchedResultsController.object(at: indexPath)
-		dataController.viewContext.delete(photoToDelete)
+	func deletePhoto(_ photo: Photo){
+		dataController.viewContext.delete(photo)
 		try? dataController.viewContext.save()
 	}
 	
-	@objc func newCollection(sender: Any) {
-		self.newCollectionButton.isEnabled = false
-		self.newCollectionButton.title = "Fetching Photos..."
-		self.activityIndicator.startAnimating()
-		
-		// TODO: This seems to lock up the UI
-		for photo in fetchedResultsController.fetchedObjects ?? [] {
-			deletePhoto(at: fetchedResultsController.indexPath(forObject: photo)!)
+	func deleteAllPhotos() {
+		let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "Photo")
+		let predicate = NSPredicate(format: "pin == %@", pin)
+		fetchRequest.predicate = predicate
+		let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+		do {
+			try dataController.viewContext.execute(deleteRequest)
+			try? dataController.viewContext.save()
+		} catch let error as NSError {
+			print("PhotoAlbumView - There was an error with the batch delete: \(error)")
 		}
+	}
+	
+	@objc func newCollection(sender: Any) {
+		newCollectionButton.isEnabled = false
+		newCollectionButton.title = "Fetching Photos..."
+		activityIndicator.startAnimating()
 		
-		downloadPhotosForPin(self.pin)
+		deleteAllPhotos()
+		downloadPhotosForPin(pin)
 	}
 	
 	func downloadPhotosForPin(_ pin: Pin){
-		flickrClient.getPhotosForLatitude(pin.latitude, longitude: pin.longitude){ photos in
-			if let photos = photos {
-				for photo in photos {
-					if let imageURL = photo.url() {
-						let photo = Photo(context: self.dataController.viewContext)
-						photo.pin = pin
-						photo.url = imageURL.absoluteString
-						photo.date = Date()
-						try? self.dataController.viewContext.save()
-					}
+		flickrClient.downloadPhotosForPin(pin) { photos in
+			for photo in photos {
+				if let imageURL = photo.url() {
+					let photo = Photo(context: self.dataController.viewContext)
+					photo.pin = pin
+					photo.url = imageURL.absoluteString
+					photo.date = Date()
 				}
-				
-				// Because fetching can be slow, user might press the new collection button
-				// twice, accidentally. Having it enable after a delay prevents this.
-				self.newCollectionButton.title = "New Collection"
-				DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-					self.newCollectionButton.isEnabled = true
-				}
-				self.activityIndicator.stopAnimating()
-			} else {
-				print("PhotoAlbumView - Could not download photos for pin or no photos")
-				self.displayNoPhotos()
 			}
+			// Saving in the block becomes terrifyingly slow - we save at the end...
+			try? self.dataController.viewContext.save()
+			// ... but then we must queue up our updates to the collection view,
+			// since we can't do a beginUpdates/endUpdates like with a tableView!
+			// It'll lock up the UI!
+			
+			self.newCollectionButton.title = "New Collection"
+			
+			// Discourage jammin' on the refresh button by adding a delay
+			DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+				self.newCollectionButton.isEnabled = true
+			}
+			self.activityIndicator.stopAnimating()
 		}
 	}
 	
 	// TODO: Move this to FlickrAPIClient
 	fileprivate func downloadDataForPhoto(_ photo: Photo) {
-		if queued.contains(photo) {
-			// We only start downloading the photo when the cell is about to be displayed
-			return
-		}
-		if let url = photo.url {
-			Alamofire.request(url).responseData { (response) in
-				if response.error == nil {
-					if let data = response.data {
-						photo.imageData = data
-						try? self.dataController.viewContext.save()
-					}
-				} else {
-					if let index = self.queued.index(of: photo) {
-						self.queued.remove(at: index)
-					}
-					print("PhotoAlbumView - Alamofire couldn't download image for url \(url)")
-				}
+		flickrClient.downloadDataForPhoto(photo) { data in
+			if data != nil {
+				photo.imageData = data
+				try? self.dataController.viewContext.save()
 			}
-			queued.append(photo)
-		} else {
-			if let index = queued.index(of: photo) {
-				queued.remove(at: index)
-			}
-			print("PhotoAlbumView - photo \(photo) provided to \(#function) had no url property")
 		}
 	}
 }
@@ -257,7 +243,7 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
 				cell.setImageData(data: data)
 			}
 		} else {
-			downloadDataForPhoto(fetchedResultsController.object(at: indexPath))
+			self.downloadDataForPhoto(self.fetchedResultsController.object(at: indexPath))
 		}
 	}
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -276,27 +262,44 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-		deletePhoto(at: indexPath)
+		dataController.viewContext.delete(fetchedResultsController.object(at: indexPath))
 	}
 }
 
 extension PhotoAlbumViewController: NSFetchedResultsControllerDelegate {
+	// Notice we have to set up block operations in order to avoid locking the UI
+	// THIS was VERY helpful: https://stackoverflow.com/questions/20554137/nsfetchedresultscontollerdelegate-for-collectionview/20554673#20554673
 	func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
-		// If we have deleted our pin, we don't want any of these to trigger
+		// If we have deleted our pin, we don't want any of these to trigger. We're only interested in Photos
 		if anObject is Photo && self.pin != nil {
+			let operation: BlockOperation
 			switch type {
 			case .insert:
-				self.collectionView?.insertItems(at: [newIndexPath!])
+				operation = BlockOperation { self.collectionView?.insertItems(at: [newIndexPath!]) }
 				break
 			case .delete:
-				self.collectionView?.deleteItems(at: [indexPath!])
+				operation = BlockOperation { self.collectionView?.deleteItems(at: [indexPath!]) }
 				break
 			case .update:
-				self.collectionView?.reloadItems(at: [indexPath!])
+				operation = BlockOperation { self.collectionView?.reloadItems(at: [indexPath!]) }
 			case .move:
-				self.collectionView?.moveItem(at: indexPath!, to: newIndexPath!)
+				operation = BlockOperation { self.collectionView?.moveItem(at: indexPath!, to: newIndexPath!) }
 			}
+			blockOperations.append(operation)
 		}
+		
+	}
+	
+	func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+		blockOperations.removeAll(keepingCapacity: false)
+	}
+	
+	func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+		collectionView.performBatchUpdates({
+			self.blockOperations.forEach { $0.start() }
+		}, completion: { finished in
+			self.blockOperations.removeAll(keepingCapacity: false)
+		})
 	}
 }
 
