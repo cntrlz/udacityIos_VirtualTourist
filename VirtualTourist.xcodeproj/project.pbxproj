@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5E3C09692123783400B293D2 /* Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E3C09682123783400B293D2 /* Onboarding.swift */; };
 		5E488DCA211E42330021849E /* PhotoAlbumViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E488DC9211E42330021849E /* PhotoAlbumViewController.swift */; };
 		5E6CB1D4210FD33100591165 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6CB1D3210FD33100591165 /* AppDelegate.swift */; };
 		5E6CB1D9210FD33100591165 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 5E6CB1D7210FD33100591165 /* Main.storyboard */; };
@@ -45,6 +46,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		5E3C09682123783400B293D2 /* Onboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding.swift; sourceTree = "<group>"; };
 		5E488DC9211E42330021849E /* PhotoAlbumViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoAlbumViewController.swift; sourceTree = "<group>"; };
 		5E6CB1D0210FD33100591165 /* VirtualTourist.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VirtualTourist.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E6CB1D3210FD33100591165 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -177,6 +179,7 @@
 			children = (
 				5E6CB208210FD62D00591165 /* TravelLocationsMapViewController.swift */,
 				5E488DC9211E42330021849E /* PhotoAlbumViewController.swift */,
+				5E3C09682123783400B293D2 /* Onboarding.swift */,
 			);
 			path = Controller;
 			sourceTree = "<group>";
@@ -372,6 +375,7 @@
 			files = (
 				5E6CB221211139A300591165 /* DataController.swift in Sources */,
 				5E6CB20D2110C05200591165 /* FlickrAPIClient.swift in Sources */,
+				5E3C09692123783400B293D2 /* Onboarding.swift in Sources */,
 				5E6CB1D4210FD33100591165 /* AppDelegate.swift in Sources */,
 				5E6CB1DC210FD33100591165 /* VirtualTourist.xcdatamodeld in Sources */,
 				5E6CB209210FD62D00591165 /* TravelLocationsMapViewController.swift in Sources */,

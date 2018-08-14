@@ -1,18 +1,17 @@
 //
-//  PhotoAlbumViewController.swift
+//  TravelLocationsMapViewController.swift
 //  VirtualTourist
 //
-//  Created by benchmark on 8/10/18.
+//  Created by benchmark on 7/30/18.
 //  Copyright © 2018 Viktor Lantos. All rights reserved.
 //
 
 import Foundation
 import UIKit
 import CoreData
-import Alamofire
 import MapKit
 
-class PhotoAlbumViewController: UIViewController {
+class PhotoAlbumViewController: UIViewController, UIGestureRecognizerDelegate {
 	// IBOutlets
 	@IBOutlet weak var collectionView: UICollectionView!
 	@IBOutlet weak var mapView: MKMapView!
@@ -31,6 +30,7 @@ class PhotoAlbumViewController: UIViewController {
 	var pin: Pin!
 	var mapRegion: MKCoordinateRegion = MKCoordinateRegion()
 	var blockOperations: [BlockOperation] = []
+	var selectedIndexPaths: [IndexPath] = []
 
 	// MARK: - View
 	override func viewDidLoad() {
@@ -42,6 +42,8 @@ class PhotoAlbumViewController: UIViewController {
 	
 	override func viewWillAppear(_ animated: Bool) {
 		super.viewWillAppear(animated)
+		
+		Onboarding.photoAlbum()
 		if (fetchedResultsController.sections?[0].numberOfObjects ?? 0 > 0) {
 			self.newCollectionButton.isEnabled = true
 			self.newCollectionButton.title = "New Collection"
@@ -59,7 +61,7 @@ class PhotoAlbumViewController: UIViewController {
 		configureToolbarItems()
 		configureActivityIndicator()
 		
-		deleteAlbumButton = UIBarButtonItem(barButtonSystemItem: .trash, target: self, action: #selector(deleteAlbum))
+		deleteAlbumButton = UIBarButtonItem(barButtonSystemItem: .trash, target: self, action: #selector(deletePressed))
 		deleteAlbumButton.isEnabled = false
 		navigationItem.rightBarButtonItem = deleteAlbumButton
 	}
@@ -88,25 +90,37 @@ class PhotoAlbumViewController: UIViewController {
 	}
 	
 	// Make things prettier
-	// Funny layout on small screen widths
+	// TODO: Funny layout on small screen widths
 	fileprivate func configureCollectionView() {
+		// Flow
 		let flow = UICollectionViewFlowLayout()
 		let itemSpacing: CGFloat = 2
-		let minimumCellWidth: CGFloat = 120
 		let collectionViewWidth = collectionView!.bounds.size.width
-		
-		let itemsPerLine = CGFloat(Int((collectionViewWidth - CGFloat(Int(collectionViewWidth / minimumCellWidth) - 1) * itemSpacing) / minimumCellWidth))
-		let width = collectionViewWidth - itemSpacing * (itemsPerLine - 1)
-		let cellWidth = floor(width / itemsPerLine)
-		let realItemSpacing = itemSpacing + (width / itemsPerLine - cellWidth) * itemsPerLine / (itemsPerLine - 1)
-		
+		let minimumCellWidth: CGFloat = 120
+
+		let cellsPerRowMinusSpacing = CGFloat(Int(collectionViewWidth / minimumCellWidth) - 1)
+		let widthMinusAllSpacing = collectionViewWidth - cellsPerRowMinusSpacing * itemSpacing
+		let itemsPerRow = CGFloat(Int(widthMinusAllSpacing / minimumCellWidth))
+		let width = collectionViewWidth - itemSpacing * (itemsPerRow - 1)
+		let cellWidth = floor(width / itemsPerRow)
+		let realItemSpacing = itemSpacing + (width / itemsPerRow - cellWidth) * itemsPerRow / (itemsPerRow - 1)
+
 		let edgeSpacing : CGFloat = 4
 		flow.sectionInset = UIEdgeInsets(top: edgeSpacing, left: edgeSpacing, bottom: edgeSpacing, right: edgeSpacing)
 		flow.itemSize = CGSize(width: cellWidth - edgeSpacing, height: cellWidth - edgeSpacing)
 		flow.minimumInteritemSpacing = realItemSpacing
 		flow.minimumLineSpacing = realItemSpacing
 		
+		// User interaction
 		collectionView?.setCollectionViewLayout(flow, animated: false)
+		collectionView.allowsMultipleSelection = true
+		
+		let longPress : UILongPressGestureRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(collectionViewLongPress(_:)))
+		longPress.delaysTouchesBegan = true
+		longPress.minimumPressDuration = 0.5
+		longPress.delegate = self
+		self.collectionView?.addGestureRecognizer(longPress)
+		
 	}
 	
 	func configureMapView() {
@@ -121,6 +135,13 @@ class PhotoAlbumViewController: UIViewController {
 	}
 	
 	func displayNoPhotos() {
+		if (presentedViewController != nil) {
+			// Delay if we're already presenting an alert (eg, onboarding)
+			DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+				self.displayNoPhotos()
+			}
+			return
+		}
 		let alert = UIAlertController(title: "No Photos", message: "Sorry! We couldn't find any pictures for this location", preferredStyle: UIAlertControllerStyle.alert)
 		alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: { alertAction in self.activityIndicator.stopAnimating()
 			self.navigationItem.title = "Album (No Photos)"
@@ -156,13 +177,19 @@ class PhotoAlbumViewController: UIViewController {
 		}
 	}
 	
-	@objc fileprivate func deleteAlbum() {
-		let alert = UIAlertController(title: "Delete Album?", message: "Are you sure you want to delete all your photos, and its associated pin?", preferredStyle: UIAlertControllerStyle.alert)
-		alert.addAction(UIAlertAction(title: "Cancel", style: UIAlertActionStyle.default, handler: nil))
-		alert.addAction(UIAlertAction(title: "Delete Album", style: UIAlertActionStyle.destructive) { action in
-			self.deletePin()
-		})
-		present(alert, animated: true, completion: nil)
+	@objc fileprivate func deletePressed() {
+		if (collectionView.indexPathsForSelectedItems?.count ?? 0 > 0) {
+			for path in collectionView.indexPathsForSelectedItems! {
+				dataController.viewContext.delete(fetchedResultsController.object(at: path))
+			}
+		} else {
+			let alert = UIAlertController(title: "Delete Album?", message: "Are you sure you want to delete all your photos, and its associated pin?", preferredStyle: UIAlertControllerStyle.alert)
+			alert.addAction(UIAlertAction(title: "Cancel", style: UIAlertActionStyle.default, handler: nil))
+			alert.addAction(UIAlertAction(title: "Delete Album", style: UIAlertActionStyle.destructive) { action in
+				self.deletePin()
+			})
+			present(alert, animated: true, completion: nil)
+		}
 	}
 	
 	fileprivate func deletePin() {
@@ -244,7 +271,9 @@ class PhotoAlbumViewController: UIViewController {
 	}
 }
 
+// MARK: - CollectionView Delegate
 extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+	// MARK: Delegate Methods
 	func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
 		let cell = cell as! PhotoAlbumCell
 		if let data = fetchedResultsController.object(at: indexPath).imageData {
@@ -260,6 +289,9 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "PhotoAlbumCell", for: indexPath) as! PhotoAlbumCell
 		cell.prepareForReuse()
 		cell.indexPath = indexPath
+		if (selectedIndexPaths.contains(indexPath)){
+			cell.isSelected = true
+		}
 		return cell
 	}
 	
@@ -271,11 +303,60 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
 		return fetchedResultsController.sections?[section].numberOfObjects ?? 0
 	}
 	
+	func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
+		if let selected = collectionView.indexPathsForSelectedItems {
+			if selected.contains(indexPath) {
+				if let ip = selectedIndexPaths.index(of: indexPath) {
+					selectedIndexPaths.remove(at: ip)
+				}
+				collectionView.deselectItem(at: indexPath, animated: true)
+				return false
+			}
+		}
+		return true
+	}
+	
 	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-		dataController.viewContext.delete(fetchedResultsController.object(at: indexPath))
+		self.selectedIndexPaths.append(indexPath)
+	}
+	
+	func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
+		if let ip = selectedIndexPaths.index(of: indexPath) {
+			selectedIndexPaths.remove(at: ip)
+		}
+	}
+	
+	// MARK: Convenience Methods
+	func enlargeImageAt(_ indexPath: IndexPath) {
+		let cell = collectionView.cellForItem(at: indexPath) as! PhotoAlbumCell
+		let imageView = UIImageView(image: cell.imageView.image) // copy our image
+		imageView.frame = self.view.frame
+		imageView.contentMode = .scaleAspectFit
+		imageView.backgroundColor = .black
+		imageView.contentMode = .center
+		imageView.isUserInteractionEnabled = true
+		
+		let tap = UITapGestureRecognizer(target: self, action: #selector(closeImage))
+		imageView.addGestureRecognizer(tap)
+		
+		UIApplication.shared.keyWindow?.addSubview(imageView)
+	}
+	
+	@objc func closeImage(_ sender: UITapGestureRecognizer) {
+		sender.view?.removeFromSuperview()
+	}
+	
+	@objc func collectionViewLongPress(_ recognizer: UIGestureRecognizer) {
+		if (recognizer.state == .began) {
+			let point = recognizer.location(in: self.collectionView)
+			if let indexPath = collectionView?.indexPathForItem(at: point) {
+				enlargeImageAt(indexPath)
+			}
+		}
 	}
 }
 
+// MARK: - FetchedResultsController Delegate
 extension PhotoAlbumViewController: NSFetchedResultsControllerDelegate {
 	// Notice we have to set up block operations in order to avoid locking the UI
 	// THIS was VERY helpful: https://stackoverflow.com/questions/20554137/nsfetchedresultscontollerdelegate-for-collectionview/20554673#20554673
@@ -288,7 +369,12 @@ extension PhotoAlbumViewController: NSFetchedResultsControllerDelegate {
 				operation = BlockOperation { self.collectionView?.insertItems(at: [newIndexPath!]) }
 				break
 			case .delete:
-				operation = BlockOperation { self.collectionView?.deleteItems(at: [indexPath!]) }
+				operation = BlockOperation {
+					self.collectionView?.deleteItems(at: [indexPath!])
+					if let ip = self.selectedIndexPaths.index(of: indexPath!) {
+						self.selectedIndexPaths.remove(at: ip)
+					}
+				}
 				break
 			case .update:
 				operation = BlockOperation { self.collectionView?.reloadItems(at: [indexPath!]) }

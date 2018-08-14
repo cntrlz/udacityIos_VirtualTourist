@@ -17,8 +17,12 @@ class PhotoAlbumCell: UICollectionViewCell {
 	
 	override func awakeFromNib() {
 		super.awakeFromNib()
+		
 		containerView.layer.cornerRadius = 8
 		containerView.layer.masksToBounds = true
+		
+		imageView.contentMode = .scaleAspectFill
+		imageView.contentMode = .center
 	}
 	
 	func setImageData(data: Data?){
@@ -40,5 +44,27 @@ class PhotoAlbumCell: UICollectionViewCell {
 		super.prepareForReuse()
 		imageView.image = UIImage()
 		self.activityIndicator.startAnimating()
+	}
+	
+	func makeSelected() {
+		containerView.layer.borderWidth = 3.0
+		containerView.layer.borderColor = UIColor.blue.cgColor
+		containerView.layer.backgroundColor = UIColor.white.cgColor
+		containerView.layer.opacity = 0.75
+	}
+	
+	func makeUnselected() {
+		containerView.layer.borderColor = UIColor.clear.cgColor
+		containerView.layer.opacity = 1
+	}
+	
+	override var isSelected: Bool {
+		didSet {
+			if (isSelected) {
+				makeSelected()
+			} else {
+				makeUnselected()
+			}
+		}
 	}
 }

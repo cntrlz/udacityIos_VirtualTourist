@@ -1,10 +1,11 @@
 //
-//  DataController.swift
-//  Mooskine
+//  TravelLocationsMapViewController.swift
+//  VirtualTourist
 //
-//  Created by benchmark on 7/31/18.
-//  Copyright © 2018 Udacity. All rights reserved.
+//  Created by benchmark on 7/30/18.
+//  Copyright © 2018 Viktor Lantos. All rights reserved.
 //
+// Inspired by the Mooskine starter data controller :P
 
 import Foundation
 import CoreData
@@ -13,16 +14,16 @@ class DataController {
 	let persistentContainer:NSPersistentContainer
 	
 	var viewContext: NSManagedObjectContext {
-		// Add concurrency debug flag to product scheme
+		// To log cool stuff out, add concurrency debug flag to product scheme
 		// -com.apple.CoreData.ConcurrencyDebug 1 < level 1, 2, or 3 detail
-		return persistentContainer.viewContext // < associated with main queue
+		return persistentContainer.viewContext
 	}
 	
 	var backgroundContext: NSManagedObjectContext!
 	
 	init(modelName:String){
 		persistentContainer = NSPersistentContainer(name: modelName)
-		// TODO: I don't think we need to use a background context
+		// TODO: I don't think we use a background context in this app...
 		backgroundContext = persistentContainer.newBackgroundContext()
 //				Cool methods
 //				On the container...

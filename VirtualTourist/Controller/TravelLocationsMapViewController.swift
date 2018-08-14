@@ -7,12 +7,10 @@
 //
 
 import Foundation
-import MapKit
 import CoreData
-//import Alamofire
 import CoreLocation
+import MapKit
 
-// TODO: Add a cool "See all my last places" by sorting for pins with "mine!" woo!
 class TravelLocationsMapViewController: UIViewController {
 	// IBOutlets
 	@IBOutlet weak var mapView: MKMapView!
@@ -41,7 +39,7 @@ class TravelLocationsMapViewController: UIViewController {
 		setUpLocationManager()
 		setUpBarButtons()
 		setUpFetchedResultsController()
-		configureToolbar()
+		configureToolbarEditHint()
 		getPins()
 	}
 	
@@ -67,7 +65,7 @@ class TravelLocationsMapViewController: UIViewController {
 		navigationItem.leftBarButtonItems = [onMeButton, myPinsButton]
 	}
 	
-	func configureToolbar() {
+	func configureToolbarEditHint() {
 		let hint = UIBarButtonItem(title: "Tap a pin to delete it", style: .plain, target: self, action: nil)
 		hint.tintColor = UIColor.red
 		let space = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
@@ -75,8 +73,25 @@ class TravelLocationsMapViewController: UIViewController {
 		toolbarItems = items
 	}
 	
+	func configureToolbarViewMode() {
+		let modeText = pinViewMode == 0 ? "all" : pinViewMode == 1 ? "only your" : "manually-added"
+		let mode = UIBarButtonItem(title: "Showing \(modeText) pins", style: .plain, target: self, action: nil)
+		let space = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+		let items: [UIBarButtonItem] = [space, mode, space]
+		toolbarItems = items
+		navigationController?.setToolbarHidden(false, animated: true)
+		DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+			if (self.editingMap) {
+				self.configureToolbarEditHint()
+			} else {
+				self.navigationController?.setToolbarHidden(true, animated: true)
+			}
+		}
+	}
+	
+	// TODO: Add visual indicator of view mode
 	@objc func changePinViewMode() {
-		showFirstTimeUsingMyPlaces()
+		Onboarding.myPlaces()
 		if (pinViewMode == 0) {
 			pinViewMode = 1
 			mapView.removeAnnotations(mapView.annotations)
@@ -90,32 +105,7 @@ class TravelLocationsMapViewController: UIViewController {
 			mapView.removeAnnotations(mapView.annotations)
 			getPins()
 		}
-	}
-	
-	fileprivate func showFirstUseDropPinOnMe() {
-		let defaults = UserDefaults.standard
-		let hasReadDropPinsOnMeMessage = defaults.bool(forKey: "hasReadDropPinsOnMeMessage")
-		if (!hasReadDropPinsOnMeMessage) {
-			showAlertWith(title: "Drop a Pin on Me!", message: "You can use this button to drop pins at your current location.", action: UIAlertAction(title: "Got it", style: UIAlertActionStyle.default) { action in
-				defaults.set(true, forKey: "hasReadDropPinsOnMeMessage")
-			})
-		}
-	}
-	
-	fileprivate func showFirstTimeUsingMyPlaces() {
-		let defaults = UserDefaults.standard
-		let hasReadMyPlacesMessage = defaults.bool(forKey: "hasReadMyPlacesMessage")
-		if (!hasReadMyPlacesMessage) {
-			showAlertWith(title: "My Places", message: "You can use this to filter for pins you've dropped using your location data!", action: UIAlertAction(title: "Got it", style: UIAlertActionStyle.default) { action in
-				defaults.set(true, forKey: "hasReadMyPlacesMessage")
-			})
-		}
-	}
-	
-	fileprivate func showAlertWith(title: String = "Alert", message: String = "Message", action: UIAlertAction) {
-		let alert = UIAlertController(title: title, message: message, preferredStyle: UIAlertControllerStyle.alert)
-		alert.addAction(action)
-		present(alert, animated: true, completion: nil)
+		configureToolbarViewMode()
 	}
 	
 	// MARK: - Navigation
@@ -280,7 +270,7 @@ class TravelLocationsMapViewController: UIViewController {
 	}
 	
 	@objc func dropPinOnMe() {
-		showFirstUseDropPinOnMe()
+		Onboarding.dropPinOnMe()
 		if (pinForCurrentLocation == nil) {
 			let annotation = MKPointAnnotation()
 			annotation.coordinate = lastLocation.coordinate
@@ -305,6 +295,7 @@ class TravelLocationsMapViewController: UIViewController {
 	}
 	
 	@IBAction func edit(_ sender: Any) {
+		configureToolbarEditHint()
 		if (editingMap) {
 			editingMap = false
 			editButton.title = "Edit"
@@ -321,7 +312,6 @@ class TravelLocationsMapViewController: UIViewController {
 		}
 	}
 	
-	// TODO: - This process also takes a long time
 	@objc func removeAllPins() {
 		let alert = UIAlertController(title: "Delete Pins?", message: "Are you sure you want to delete all your pins, and their associated albums?", preferredStyle: UIAlertControllerStyle.alert)
 		alert.addAction(UIAlertAction(title: "Cancel", style: UIAlertActionStyle.default, handler: nil))
